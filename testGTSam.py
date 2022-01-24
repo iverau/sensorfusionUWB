@@ -4,7 +4,7 @@ from gtsam.symbol_shorthand import X, L
 import numpy as np
 
 class GtSAMTest:
-    DATASET_NUMBER = 4
+    DATASET_NUMBER = 1
 
     def __init__(self) -> None:
         self.dataset = ROSData(self.DATASET_NUMBER)
@@ -37,6 +37,7 @@ class GtSAMTest:
 
         #TODO: Få inn UWB posisjonene som initial values
         #TODO: Få lagt inn rett transformasjoner 
+        #TODO: Fixe bug i start tiden for det greiene her
 
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])
@@ -52,11 +53,16 @@ class GtSAMTest:
         print(result)
         X1 = X(1)
         graph = gtsam.NonlinearFactorGraph()
+        imu_counter = 0
         for measurement in self.dataset.generate_measurements():
-            #print(measurement)
             if measurement.measurement_type.value == "UWB":
-                self.add_UWB_to_graph(graph, measurement, X1)
-                print(measurement)
+                #self.add_UWB_to_graph(graph, measurement, X1)
+                print("Imu counter", imu_counter)
+                imu_counter = 0
+                break
+                #print(measurement)
+            else:
+                imu_counter += 1
 
         print(graph)
                 
