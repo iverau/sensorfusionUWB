@@ -1,7 +1,7 @@
 import rosbag
 from .datasetSettings import *
 import rospy
-from DataTypes.measurement import Measurement
+from DataTypes.measurement import generate_measurement
 
 
 class ROSData:
@@ -21,7 +21,7 @@ class ROSData:
 
     def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics):
-            yield Measurement(topic, msg, t)
+            yield generate_measurement(topic, msg, t)
 
     def get_bag_end_time(self):
         if self.dataset_settings.bag_duration < 0:

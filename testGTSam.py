@@ -53,8 +53,10 @@ class GtSAMTest:
         X1 = X(1)
         graph = gtsam.NonlinearFactorGraph()
         for measurement in self.dataset.generate_measurements():
+            #print(measurement)
             if measurement.measurement_type.value == "UWB":
                 self.add_UWB_to_graph(graph, measurement, X1)
+                print(measurement)
 
         print(graph)
                 
