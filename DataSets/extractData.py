@@ -12,9 +12,6 @@ class ROSData:
         # Initializes the dataset settings
         self.dataset_settings = ROSData.select_dataset(dataset_number)
 
-
-        print("Test av property",self.dataset_settings.filepath)
-
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
         self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
@@ -40,7 +37,3 @@ class ROSData:
         else:
             return DatasetSettings_Trondheim4()
 
-        
-
-rosdata = ROSData(1)
-print(next(rosdata.generate_measurements()).msg)

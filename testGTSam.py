@@ -10,5 +10,8 @@ class GtSAMTest:
 
     
     def run(self):
-        for dataFrame in self.dataset.generate_measurements:
+        for dataFrame in self.dataset.generate_measurements():
             print(dataFrame)
+
+testing = GtSAMTest()
+testing.run()

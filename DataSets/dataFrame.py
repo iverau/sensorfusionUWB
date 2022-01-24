@@ -1,5 +1,3 @@
-
-
 class DataFrame:
 
     def __init__(self, topic, msg, t) -> None:
