@@ -10,7 +10,7 @@ class SensorConfigurations:
 class DatasetSettingsBase:
     bag_start_time_offset = 0
     bag_duration = 10
-    enabled_topics = SensorConfigurations.IMU_GNSS
+    enabled_topics = SensorConfigurations.UWB_IMU
     _filename = None
 
         
