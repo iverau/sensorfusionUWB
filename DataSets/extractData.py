@@ -1,7 +1,7 @@
 import rosbag
 from .datasetSettings import *
 import rospy
-from DataTypes.dataFrame import Measurement
+from DataTypes.measurement import Measurement
 
 
 class ROSData:
