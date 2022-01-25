@@ -2,12 +2,13 @@ import gtsam
 from DataSets.extractData import ROSData
 from gtsam.symbol_shorthand import X, L
 import numpy as np
+from .settings import DATASET_NUMBER
 
 class GtSAMTest:
-    DATASET_NUMBER = 1
+
 
     def __init__(self) -> None:
-        self.dataset = ROSData(self.DATASET_NUMBER)
+        self.dataset = ROSData(DATASET_NUMBER)
         isam_params = gtsam.ISAM2Params()
         self.isam = gtsam.ISAM2(isam_params)
 
@@ -37,7 +38,6 @@ class GtSAMTest:
 
         #TODO: Få inn UWB posisjonene som initial values
         #TODO: Få lagt inn rett transformasjoner 
-        #TODO: Fixe bug i start tiden for det greiene her
 
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])

@@ -2,7 +2,7 @@ import rosbag
 from .datasetSettings import *
 import rospy
 from DataTypes.measurement import generate_measurement
-
+import scipy.io
 
 class ROSData:
 
@@ -36,4 +36,5 @@ class ROSData:
             return DatasetSettings_Trondheim3()
         else:
             return DatasetSettings_Trondheim4()
+
 
