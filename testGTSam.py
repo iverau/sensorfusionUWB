@@ -1,9 +1,11 @@
 import gtsam
 from DataSets.extractData import ROSData
-from gtsam.symbol_shorthand import X, L
+from gtsam.symbol_shorthand import X, L, V, B
 import numpy as np
 from settings import DATASET_NUMBER
 from DataTypes.uwb_position import UWB_Ancors_Descriptor
+
+from Sensors.IMU import IMU
 
 class GtSAMTest:
 
@@ -13,6 +15,8 @@ class GtSAMTest:
         isam_params = gtsam.ISAM2Params()
         self.isam = gtsam.ISAM2(isam_params)
         self.uwb_positions = UWB_Ancors_Descriptor(DATASET_NUMBER)
+
+        self.imu_params = IMU()
 
         # Tracked variables for IMU and UWB
         self.pose_variables = []
@@ -24,6 +28,9 @@ class GtSAMTest:
         self.initial_values = gtsam.Values()
         self.graph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
+        
+        # Dummy variables for counting amount of seen uwbs in the current pose graph
+        self.uwb_counter = set()
 
 
     def initialize_graph(self):
@@ -61,13 +68,49 @@ class GtSAMTest:
             
         return self.landmarks_variables[uwb_measurement.id]
 
+
+    def reset_pose_graph_variables(self):
+        self.initial_values = gtsam.Values()
+        self.graph = gtsam.NonlinearFactorGraph()
+        self.uwb_counter = set()
+
     def pre_integrate_imu_measurement(self, imu_measurements):
-        pass
+        currentBias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,)))
+        summarized_measurement = gtsam.PreintegratedImuMeasurement(self.imu_params.preintegration_param, currentBias)
+
+        deltaT = 0.1
+
+        for measurement in imu_measurements:
+            summarized_measurement.integrateMeasurement(measurement.linear_vel, measurement.angular_vel, deltaT)
+
+    def add_imu_factor(self, integrated_measurement, imu_measurements):
+        # Create new state variables
+        self.pose_variables.append(X(len(self.pose_variables)))
+        self.velocity_variables.append(V(len(self.velocity_variables)))
+        self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
+
+        # Add the new factors to the graph
+        self.graph.add(gtsam.ImuFactor(
+            self.pose_variables[-2],
+            self.velocity_variables[-2],
+            self.pose_variables[-1],
+            self.velocity_variables[-1],
+            self.imu_bias_variables[-2],
+            integrated_measurement
+        ))
+        
+        self.graph.add(
+            gtsam.BetweenFactorConstantBias(
+                self.imu_bias_variables[-2],
+                self.imu_bias_variables[-1],
+                gtsam.imuBias.ConstantBias(np.zeros((3, 1)), np.zeros((3, 1))),
+                gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements)) * self.imu_params.sigmaBetweenBias)
+            )
+        )
+
 
     def run(self):
-
-        imu_counter = 0
-        uwb_counter = set()
+        # Dummy variable for storing imu measurements
         imu_measurements = []
 
         for measurement in self.dataset.generate_measurements():
@@ -80,32 +123,15 @@ class GtSAMTest:
             # TODO: Få lagt inn rett transformasjoner 
 
             if measurement.measurement_type.value == "UWB":
-
-
                 if imu_measurements:
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
+                    self.add_imu_factor(integrated_measurement, imu_measurements) 
+
                     # Reset the IMU measurement list
                     imu_measurements = []
                 
                 self.add_UWB_to_graph(self.graph, measurement)
                 # TODO: What this should do
-                """
-                if imu measurements are avaialble
-                    - pre integrate it 
-                    - create a new state for it
-                else:
-                    - Add UWB measurement to current state
-
-                """
-
-                #self.add_UWB_to_graph(graph, measurement, X1)
-                #print("Imu counter", imu_counter)
-                imu_counter = 0
-                print(imu_measurements)
-                #break
-                #print(measurement)
-                #print("UWB sett", self.initial_values.size())
-
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
@@ -113,21 +139,11 @@ class GtSAMTest:
                 
         
             # Update ISAM with graph and initial_values
-            if len(uwb_counter) == 5:
-                uwb_counter = set()
-                self.isam.update(self.graph,self.initial_values)
+            if len(self.uwb_counter) == 5:
+                self.isam.update(self.graph, self.initial_values)
                 
                 # Reset the graph and initial values
-                self.initial_values = gtsam.Values()
-                self.graph = gtsam.NonlinearFactorGraph()
+                self.reset_pose_graph_variables()
 
-        #print(graph)
-        #print(self.initial_values)
-        #self.isam.update(graph, self.initial_values)
-                
-        """
-        if dataFrame.topic != "/ublox1/fix":
-            print(dataFrame.msg)
-        """
 testing = GtSAMTest()
 testing.run()
