@@ -16,6 +16,8 @@ class UWB_Ancors_Descriptor:
             uwb_pos = UWB_Position(mat_file)
             self.UWB_position_map[uwb_pos.id] = uwb_pos
 
+    def __getitem__(self, key):
+        return self.UWB_position_map[key]
 
     def generate_beacon_data_path(self,id):
         return f"DataSets/Beacondata/trondheim{self.dataset_number}/beacon{id}_time_fix.mat"
@@ -36,6 +38,3 @@ class UWB_Position:
 
     def __repr__(self) -> str:
         return f"UWB_Position[id = {self.id}, x = {self.x}, y = {self.y}, z = {self.z}]"
-
-pos = UWB_Ancors_Descriptor(1)
-print(pos)
