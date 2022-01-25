@@ -20,7 +20,7 @@ class ROSData:
 
 
     def generate_measurements(self):
-        for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics):
+        for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
             yield generate_measurement(topic, msg, t)
 
     def get_bag_end_time(self):

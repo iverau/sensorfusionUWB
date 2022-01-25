@@ -9,7 +9,7 @@ class SensorConfigurations:
 
 class DatasetSettingsBase:
     #bag_start_time_offset = 0
-    bag_duration = 10
+    bag_duration = 100
     enabled_topics = SensorConfigurations.UWB_IMU
     _filename = None
 
@@ -27,7 +27,7 @@ class DatasetSettingsBase:
 
 
 class DatasetSettings_Trondheim1(DatasetSettingsBase):
-    bag_start_time_offset = 2000000
+    bag_start_time_offset = 930
     _filename = "trondheim1_inn.bag"
 
 

@@ -59,7 +59,7 @@ class GtSAMTest:
                 #self.add_UWB_to_graph(graph, measurement, X1)
                 print("Imu counter", imu_counter)
                 imu_counter = 0
-                break
+                #break
                 #print(measurement)
             else:
                 imu_counter += 1
