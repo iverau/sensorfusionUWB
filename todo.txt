@@ -1,2 +1,3 @@
 Få koden til å fungere
 Få inn initiel condition for all states
+Legge inn transformasjoner i Measurement klassen

@@ -16,6 +16,8 @@ class DatasetSettingsBase:
     #IMU settings
     imu_frequency = 100
 
+    def ned_origin_filepath(self):
+        return Path.joinpath(Path(__file__).parent.absolute(), "Gnssdata/ned_origin.mat")
         
     @property
     def filepath(self):

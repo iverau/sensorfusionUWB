@@ -3,7 +3,8 @@ from .datasetSettings import *
 import rospy
 from DataTypes.measurement import generate_measurement
 import scipy.io
-
+import pymap3d as pm
+import numpy as np
 class ROSData:
 
     def __init__(self, dataset_number: int) -> None:
@@ -16,8 +17,37 @@ class ROSData:
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
         self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
         self.bag_end_time = self.get_bag_end_time()
+        self.extract_initial_pose()
 
 
+    def extract_initial_pose(self):
+        for _, msg, t in self.bag.read_messages(topics=["/ublox1/fix"], start_time=self.bag_start_time):
+            data = msg
+            time = t
+            break
+        self.bag_start_time = time
+        self.convert_GNSS_to_NED(data)
+
+    def extract_ned_origin(self):
+        data = scipy.io.loadmat(self.dataset_settings.ned_origin_filepath())
+        latitude = data["lat0"][0][0]
+        longitude = data["lon0"][0][0]
+        altitiude = data["height0"][0][0]
+        return np.array([latitude, longitude, altitiude])
+
+    def convert_GNSS_to_NED(self, msg):
+        ned_origin = self.extract_ned_origin()
+        n, e, d = pm.geodetic2ned(
+                msg.latitude,
+                msg.longitude,
+                msg.altitude,
+                ned_origin[0],  # NED origin
+                ned_origin[0],  # NED origin
+                ned_origin[0],  # NED origin
+                ell=pm.Ellipsoid("wgs84"),
+                deg=True,
+        )
+        print("NED coordinates", n, e, d)
 
     def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
