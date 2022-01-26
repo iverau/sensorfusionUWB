@@ -13,6 +13,9 @@ class DatasetSettingsBase:
     enabled_topics = SensorConfigurations.UWB_IMU
     _filename = None
 
+    #IMU settings
+    imu_frequency = 100
+
         
     @property
     def filepath(self):

@@ -55,7 +55,7 @@ class GtSAMTest:
         #print("ISAM object", self.isam)
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])
-        graph.add(gtsam.RangeFactor2D(self.pose_variable[-1], landmark, uwb_measurement.range, measurement_noise))
+        graph.add(gtsam.RangeFactor2D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
 
 
     def get_UWB_landmark(self, uwb_measurement):
@@ -76,9 +76,9 @@ class GtSAMTest:
 
     def pre_integrate_imu_measurement(self, imu_measurements):
         currentBias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,)))
-        summarized_measurement = gtsam.PreintegratedImuMeasurement(self.imu_params.preintegration_param, currentBias)
+        summarized_measurement = gtsam.PreintegratedImuMeasurements(self.imu_params.preintegration_param, currentBias)
 
-        deltaT = 0.1
+        deltaT = 1 / self.dataset.dataset_settings.imu_frequency
 
         for measurement in imu_measurements:
             summarized_measurement.integrateMeasurement(measurement.linear_vel, measurement.angular_vel, deltaT)
