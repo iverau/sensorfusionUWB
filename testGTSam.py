@@ -14,6 +14,8 @@ class GtSAMTest:
     def __init__(self) -> None:
         self.dataset = ROSData(DATASET_NUMBER)
         isam_params = gtsam.ISAM2Params()
+        isam_params.setFactorization("CHOLESKY")
+        isam_params.setRelinearizeSkip(10)
         self.isam = gtsam.ISAM2(isam_params)
         self.uwb_positions = UWB_Ancors_Descriptor(DATASET_NUMBER)
         self.ground_truth = GroundTruthEstimates(DATASET_NUMBER)
@@ -126,7 +128,6 @@ class GtSAMTest:
             )
         )
 
-        #print("Pose variable", self.pose_variables[-1], type(self.initial_pose))
         self.initial_values.insert(self.pose_variables[-1], self.initial_pose)
         self.initial_values.insert(self.velocity_variables[-1], self.iniial_velocity)
         self.initial_values.insert(self.imu_bias_variables[-1], self.initial_bias)
@@ -163,7 +164,7 @@ class GtSAMTest:
         
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 4:
-                print(self.graph)
+                print("Her :)")
                 #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
                 
