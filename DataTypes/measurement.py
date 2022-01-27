@@ -54,15 +54,29 @@ class UWB_Measurement(Measurement):
 
 class IMU_Measurement(Measurement):
 
+    R_IMU_BODY = np.array(
+        [
+            [0, 1, 0],
+            [1, 0, 0],
+            [0, 0, -1]
+        ]
+    )
+
     def __init__(self, topic, msg, t) -> None:
         super().__init__(topic, t)
         self.extract_measurement_data(msg)
+        
+
+
+    def imu_to_body(self, data):
+        return self.R_IMU_BODY @ data
 
     def extract_measurement_data(self, msg):
-        self.angular_vel = np.array([msg.angular_velocity.x, msg.angular_velocity.y, msg.angular_velocity.z])
-        self.angular_vel_covariance = np.diag([msg.angular_velocity_covariance[0], msg.angular_velocity_covariance[4], msg.angular_velocity_covariance[8]])
-        self.linear_vel = np.array([msg.linear_acceleration.x, msg.linear_acceleration.y, msg.linear_acceleration.z])
-        self.linear_vel_covariance = np.diag([msg.linear_acceleration_covariance[0], msg.linear_acceleration_covariance[4], msg.linear_acceleration_covariance[8]])
+        # Data converted to body
+        self.angular_vel = np.array([msg.angular_velocity.y, msg.angular_velocity.x, -msg.angular_velocity.z])
+        self.angular_vel_covariance = np.diag([msg.angular_velocity_covariance[4], msg.angular_velocity_covariance[0], msg.angular_velocity_covariance[8]])
+        self.linear_vel = np.array([msg.linear_acceleration.y, msg.linear_acceleration.x, -msg.linear_acceleration.z])
+        self.linear_vel_covariance = np.diag([msg.linear_acceleration_covariance[4], msg.linear_acceleration_covariance[0], msg.linear_acceleration_covariance[8]])
 
     def __repr__(self) -> str:
         return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.angular_vel}, Id={self.linear_vel}]" 

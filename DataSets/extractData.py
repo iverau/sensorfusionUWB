@@ -26,7 +26,7 @@ class ROSData:
             time = t
             break
         self.bag_start_time = time
-        self.convert_GNSS_to_NED(data)
+        return self.convert_GNSS_to_NED(data)
 
     def extract_ned_origin(self):
         data = scipy.io.loadmat(self.dataset_settings.ned_origin_filepath())
@@ -42,12 +42,12 @@ class ROSData:
                 msg.longitude,
                 msg.altitude,
                 ned_origin[0],  # NED origin
-                ned_origin[0],  # NED origin
-                ned_origin[0],  # NED origin
+                ned_origin[1],  # NED origin
+                ned_origin[2],  # NED origin
                 ell=pm.Ellipsoid("wgs84"),
                 deg=True,
         )
-        print("NED coordinates", n, e, d)
+        return np.array([n, e, d])
 
     def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):

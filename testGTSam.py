@@ -37,15 +37,35 @@ class GtSAMTest:
 
         graph = gtsam.NonlinearFactorGraph()
 
+        # Defining the state
         X1 = X(1)
-
+        V1 = V(1)
+        B1 = B(1)
         self.pose_variables.append(X1)
+        self.velocity_variables.append(V1)
+        self.imu_bias_variables.append(B1)
 
-        prior_noise = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1]))
-        graph.add(gtsam.PriorFactorPose2(X1, gtsam.Pose2(0.0, 0.0, 0.0), prior_noise))
+        # TODO: Find initial heading :o
+
+        # Set priors
+        prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1]))
+        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
+        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 0.1]))
+
+        initial_pose = gtsam.Pose2(*self.dataset.extract_initial_pose()[:2], 0.0)
+        iniial_velocity = None
+        initial_bias = gtsam.imuBias.ConstantBias(np.zeros((2,)), np.zeros((2,))) 
+
+        graph.add(gtsam.PriorFactorPose2(X1, initial_pose, prior_noise_x))
+        graph.add(gtsam.PriorFactorPose2(V1, iniial_velocity, prior_noise_v))
+        graph.add(gtsam.PriorFactorConstantBias(B1, initial_bias, prior_noise_b))
+
+        #graph.add(gtsam.)
 
         initial_estimates = gtsam.Values()
-        initial_estimates.insert(X1, gtsam.Pose2(0.0, 0.0, 0.0))
+        initial_estimates.insert(X1, initial_pose)
+        initial_estimates.insert(V1, iniial_velocity)
+        initial_estimates.insert(B1, initial_bias)
 
         self.isam.update(graph, initial_estimates)
     
