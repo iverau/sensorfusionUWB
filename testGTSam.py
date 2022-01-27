@@ -39,36 +39,31 @@ class GtSAMTest:
         graph = gtsam.NonlinearFactorGraph()
 
         # Defining the state
-        X1 = X(1)
-        V1 = V(1)
-        B1 = B(1)
+        X1 = X(0)
+        V1 = V(0)
+        B1 = B(0)
         self.pose_variables.append(X1)
         self.velocity_variables.append(V1)
         self.imu_bias_variables.append(B1)
 
-        # TODO: Find initial heading :o
-
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1]))
+        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
-        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1]))
+        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
-        initial_pose = gtsam.Pose2(self.ground_truth.initial_pose())
-        iniial_velocity = self.ground_truth.initial_velocity()
-        initial_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
+        self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
+        self.iniial_velocity = self.ground_truth.initial_velocity()
+        self.initial_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
 
-        graph.add(gtsam.PriorFactorPose2(X1, initial_pose, prior_noise_x))
-        graph.add(gtsam.PriorFactorVector(V1, iniial_velocity, prior_noise_v))
-        graph.add(gtsam.PriorFactorConstantBias(B1, initial_bias, prior_noise_b))
+        self.graph.add(gtsam.PriorFactorPose3(X1, self.initial_pose, prior_noise_x))
+        self.graph.add(gtsam.PriorFactorVector(V1, self.iniial_velocity, prior_noise_v))
+        self.graph.add(gtsam.PriorFactorConstantBias(B1, self.initial_bias, prior_noise_b))
 
-        #graph.add(gtsam.)
+        self.initial_values.insert(X1, self.initial_pose)
+        self.initial_values.insert(V1, self.iniial_velocity)
+        self.initial_values.insert(B1, self.initial_bias)
 
-        initial_estimates = gtsam.Values()
-        initial_estimates.insert(X1, initial_pose)
-        initial_estimates.insert(V1, iniial_velocity)
-        initial_estimates.insert(B1, initial_bias)
-
-        self.isam.update(graph, initial_estimates)
+        #self.isam.update(graph, initial_estimates)
     
 
     def add_UWB_to_graph(self, graph, uwb_measurement):
@@ -76,7 +71,7 @@ class GtSAMTest:
         #print("ISAM object", self.isam)
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])
-        graph.add(gtsam.RangeFactor2D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
+        graph.add(gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
 
 
     def get_UWB_landmark(self, uwb_measurement):
@@ -85,7 +80,7 @@ class GtSAMTest:
             self.landmarks_variables[uwb_measurement.id] = L(len(self.landmarks_variables.keys()))
 
             # Creates an initial estimate of the landmark pose
-            self.initial_values.insert(self.landmarks_variables[uwb_measurement.id], gtsam.Point2(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y))
+            self.initial_values.insert(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z))
             
         return self.landmarks_variables[uwb_measurement.id]
 
@@ -131,6 +126,11 @@ class GtSAMTest:
             )
         )
 
+        #print("Pose variable", self.pose_variables[-1], type(self.initial_pose))
+        self.initial_values.insert(self.pose_variables[-1], self.initial_pose)
+        self.initial_values.insert(self.velocity_variables[-1], self.iniial_velocity)
+        self.initial_values.insert(self.imu_bias_variables[-1], self.initial_bias)
+
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -162,8 +162,9 @@ class GtSAMTest:
                 
         
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 5:
+            if len(self.uwb_counter) == 4:
                 print(self.graph)
+                #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
                 
                 # Reset the graph and initial values
