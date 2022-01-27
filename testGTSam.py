@@ -1,5 +1,6 @@
 import gtsam
 from DataSets.extractData import ROSData
+from DataSets.extractGt import GroundTruthEstimates
 from gtsam.symbol_shorthand import X, L, V, B
 import numpy as np
 from settings import DATASET_NUMBER
@@ -15,7 +16,7 @@ class GtSAMTest:
         isam_params = gtsam.ISAM2Params()
         self.isam = gtsam.ISAM2(isam_params)
         self.uwb_positions = UWB_Ancors_Descriptor(DATASET_NUMBER)
-
+        self.ground_truth = GroundTruthEstimates(DATASET_NUMBER)
         self.imu_params = IMU()
 
         # Tracked variables for IMU and UWB
@@ -50,14 +51,14 @@ class GtSAMTest:
         # Set priors
         prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1]))
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
-        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 0.1]))
+        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 0.1, 0.1, 0.1]))
 
-        initial_pose = gtsam.Pose2(*self.dataset.extract_initial_pose()[:2], 0.0)
-        iniial_velocity = None
-        initial_bias = gtsam.imuBias.ConstantBias(np.zeros((2,)), np.zeros((2,))) 
+        initial_pose = gtsam.Pose2(self.ground_truth.initial_pose())
+        iniial_velocity = self.ground_truth.initial_velocity()
+        initial_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
 
         graph.add(gtsam.PriorFactorPose2(X1, initial_pose, prior_noise_x))
-        graph.add(gtsam.PriorFactorPose2(V1, iniial_velocity, prior_noise_v))
+        graph.add(gtsam.PriorFactorVector(V1, iniial_velocity, prior_noise_v))
         graph.add(gtsam.PriorFactorConstantBias(B1, initial_bias, prior_noise_b))
 
         #graph.add(gtsam.)
@@ -79,7 +80,7 @@ class GtSAMTest:
 
 
     def get_UWB_landmark(self, uwb_measurement):
-        initial_estimate = None
+        self.uwb_counter.add(uwb_measurement.id)
         if uwb_measurement.id not in self.landmarks_variables.keys():
             self.landmarks_variables[uwb_measurement.id] = L(len(self.landmarks_variables.keys()))
 
@@ -102,6 +103,8 @@ class GtSAMTest:
 
         for measurement in imu_measurements:
             summarized_measurement.integrateMeasurement(measurement.linear_vel, measurement.angular_vel, deltaT)
+
+        return summarized_measurement
 
     def add_imu_factor(self, integrated_measurement, imu_measurements):
         # Create new state variables
@@ -160,6 +163,7 @@ class GtSAMTest:
         
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 5:
+                print(self.graph)
                 self.isam.update(self.graph, self.initial_values)
                 
                 # Reset the graph and initial values

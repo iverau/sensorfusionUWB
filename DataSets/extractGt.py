@@ -1,7 +1,7 @@
 from pathlib import Path
 from time import time
 import scipy.io
-from datasetSettings import *
+from .datasetSettings import *
 import numpy as np
 
 """
