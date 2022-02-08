@@ -41,7 +41,7 @@ class DatasetSettings_Trondheim1(DatasetSettingsBase):
     bag_start_time_offset = 930
     _filename = "trondheim1_inn.bag"
     gt_time_offset = 18.24 
-    datset_number = 1
+    dataset_number = 1
 
 
     def __init__(self):
@@ -52,7 +52,7 @@ class DatasetSettings_Trondheim3(DatasetSettingsBase):
     bag_start_time_offset = 840
     _filename = "trondheim3_inn.bag"
     gt_time_offset = 18.42
-    datset_number = 3
+    dataset_number = 3
 
     def __init__(self):
         super(DatasetSettings_Trondheim3, self).__init__(self.dataset_number)
@@ -63,7 +63,7 @@ class DatasetSettings_Trondheim4(DatasetSettingsBase):
 
     _filename = "trondheim4_inn.bag"
     gt_time_offset = 18.55
-    datset_number = 4
+    dataset_number = 4
 
 
     def __init__(self):
