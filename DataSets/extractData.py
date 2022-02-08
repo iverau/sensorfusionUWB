@@ -98,7 +98,21 @@ class RosDataTrilateration:
         longitude = data["lon0"][0][0]
         altitiude = data["height0"][0][0]
         return np.array([latitude, longitude, altitiude])
-    
+
+    def convert_GNSS_to_NED(self, msg):
+        ned_origin = self.extract_ned_origin()
+        n, e, d = pm.geodetic2ned(
+                msg.latitude,
+                msg.longitude,
+                msg.altitude,
+                ned_origin[0],  # NED origin
+                ned_origin[1],  # NED origin
+                ned_origin[2],  # NED origin
+                ell=pm.Ellipsoid("wgs84"),
+                deg=True,
+        )
+        return np.array([n, e, d])
+        
     def get_bag_end_time(self):
         if self.dataset_settings.bag_duration < 0:
             return rospy.Time(self.bag.get_end_time())
