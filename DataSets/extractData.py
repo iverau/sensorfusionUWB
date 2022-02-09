@@ -112,29 +112,57 @@ class RosDataTrilateration:
                 deg=True,
         )
         return np.array([n, e, d])
-        
+
     def get_bag_end_time(self):
         if self.dataset_settings.bag_duration < 0:
             return rospy.Time(self.bag.get_end_time())
         return rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.dataset_settings.bag_duration)
 
-    def generate_measurements(self):
+    def generate_trilateration_combo_measurements(self):
 
         """
             Sjekke hvem som har størst tidssteg
             Returnere den som har minst
         """
+        tri_generator = self.generate_trilateration_measurement()
+        imu_generator = self.generate_measurements()
+
+        tri_meas = next(tri_generator)
+        imu_meas = next(imu_generator)
+        while True:
+            if tri_meas.time < imu_meas.time.to_time():
+                yield tri_meas
+                tri_meas = next(tri_generator)
+            else:
+                yield imu_meas
+                imu_meas = next(imu_generator)
+
+            if not tri_meas and not imu_meas:
+                return None
+
+
+    def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
             yield generate_measurement(topic, msg, t)
 
 
-    def generate_rosbag_measurements(self):
-        for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
-            yield generate_measurement(topic, msg, t)
+    def extract_trilateration_measurements(self):
+        trilateration_data = scipy.io.loadmat(self.dataset_settings.trilateration_filepath())
+        x_list = trilateration_data["pos_sensor"][0][0][0][0]
+        y_list = trilateration_data["pos_sensor"][0][0][1][0]
+        z_list = trilateration_data["pos_sensor"][0][0][4][0]
+        time_list = trilateration_data["pos_sensor"][0][0][6][0]
+        list_of_measurements = []
+        
+        for x, y, z, time in zip(x_list, y_list, z_list, time_list):
+            list_of_measurements.append(generate_measurement("uwb_trilateration", {"x": x, "y": y, "z": z}, time))
+
+        return list_of_measurements
 
     def generate_trilateration_measurement(self):
-        trilateration_data = scipy.io.loadmat(self.dataset_settings.trilateration_filepath())
-        print(trilateration_data)
+        measurements = self.extract_trilateration_measurements()
+        for measurement in measurements:
+            yield measurement
     
     @staticmethod
     def select_dataset(id : int):

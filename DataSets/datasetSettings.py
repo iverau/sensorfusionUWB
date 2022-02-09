@@ -5,12 +5,13 @@ class SensorConfigurations:
     UWB = ["/uwb_beacons_parsed"]
     IMU_GNSS = ["/os1_cloud_node/imu", "/ublox1/fix"]
     GNSS = ["/ublox1/fix"]
+    IMU_TRI = ["/os1_cloud_node/imu"]
 
 
 class DatasetSettingsBase:
     #bag_start_time_offset = 0
     bag_duration = 100
-    enabled_topics = SensorConfigurations.UWB_IMU
+    enabled_topics = SensorConfigurations.IMU_TRI
     _filename = None
 
     def __init__(self, dataset_number: int):
