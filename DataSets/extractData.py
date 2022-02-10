@@ -71,6 +71,8 @@ class ROSData:
 class RosDataTrilateration:
 
 
+    #TODO: Sørg for at UWB starter på rett sted
+
     def __init__(self, dataset_number: int) -> None:
         print("Initialize ROS dataset number ",dataset_number,".\n",end="")
         
@@ -124,7 +126,7 @@ class RosDataTrilateration:
             Sjekke hvem som har størst tidssteg
             Returnere den som har minst
         """
-        tri_generator = self.generate_trilateration_measurement()
+        tri_generator = self.skip_to_right_time_step(self.generate_trilateration_measurement())
         imu_generator = self.generate_measurements()
 
         tri_meas = next(tri_generator)
@@ -140,6 +142,11 @@ class RosDataTrilateration:
             if not tri_meas and not imu_meas:
                 return None
 
+    def skip_to_right_time_step(self, trilateration_generator):
+        tri_time = next(trilateration_generator)
+        while tri_time.time < self.bag_start_time.to_time():
+            tri_time = next(trilateration_generator)
+        return trilateration_generator
 
     def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
@@ -173,5 +180,3 @@ class RosDataTrilateration:
         else:
             return DatasetSettings_Trondheim4()
 
-
-datasets = RosDataTrilateration(4)

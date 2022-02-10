@@ -1,5 +1,7 @@
 from enum import Enum
 import numpy as np
+import gtsam
+
 
 UWB_OFFSET = 0.85
 UWB_STD = 0.2
@@ -92,6 +94,13 @@ class UWB_Trilateration_Measurement(Measurement):
         self.x = msg["x"]
         self.y = msg["y"]
         self.z = msg["z"]
+        self.covX = 1
+        self.covY = 1
+        self.covZ = 9
+
+        self.position = [self.x, self.y, self.z]
+        self.covariance = np.diag([self.covX, self.covY, self.covZ])
+        self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / self.covX ** 2, 1.0 / self.covY ** 2, 1.0 / self.covZ ** 2]))
 
     def __repr__(self) -> str:
         return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
