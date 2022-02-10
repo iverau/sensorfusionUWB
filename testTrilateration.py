@@ -1,3 +1,4 @@
+from math import degrees
 from DataSets.extractData import RosDataTrilateration
 from DataSets.extractGt import GroundTruthEstimates
 from settings import DATASET_NUMBER
@@ -5,6 +6,8 @@ from Sensors.IMU import IMU
 import numpy as np
 import gtsam
 from gtsam.symbol_shorthand import X, L, V, B
+from scipy.spatial.transform import Rotation as R
+import matplotlib.pyplot as plt
 
 class TrilaterationEstimates:
 
@@ -47,7 +50,11 @@ class TrilaterationEstimates:
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
-        self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
+        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
+        T_init = self.ground_truth.initial_pose()[3:]
+        self.initial_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
+
+
         self.iniial_velocity = self.ground_truth.initial_velocity()
         self.initial_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
 
@@ -147,14 +154,73 @@ class TrilaterationEstimates:
         
             # Update ISAM with graph and initial_values
             #print("Counter",self.uwb_counter)
-            if self.uwb_counter == 4:
+            if self.uwb_counter == 2:
+                #print(self.ground_truth.initial_pose())
+                #print(self.initial_pose)
                 print("Her :)")
                 #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
                 
-                # Reset the graph and initial values
-                self.reset_pose_graph_variables()
+                result = self.isam.calculateEstimate()
 
+                self.reset_pose_graph_variables()
+                self.initial_pose = result.atPose3(self.pose_variables[-1])
+                self.iniial_velocity = result.atVector(self.velocity_variables[-1])
+                self.initial_bias = result.atConstantBias(self.imu_bias_variables[-1])
+                if len(self.imu_bias_variables)  == 569:
+                    break
+                # Reset the graph and initial values
+                
+        positions, eulers = gtsam_pose_from_result(result)
+        print("\n-- Plot pose")
+        plt.figure(1)
+        plot_horizontal_trajectory(positions, [-20, 20], [-100, -65])
+        plt.show()
+
+def gtsam_pose_from_result(gtsam_result):
+    poses = gtsam.utilities.allPose3s(gtsam_result)
+    keys = gtsam.KeyVector(poses.keys())
+
+    positions, eulers = [], []
+    for key in keys:
+        if gtsam_result.exists(key):
+            pose = gtsam_result.atPose3(key)
+            pos, euler = gtsam_pose_to_numpy(pose)
+            positions.append(pos)
+            eulers.append(euler)
+    positions = np.array(positions)
+    eulers = np.array(eulers)
+    return positions, eulers
+
+def gtsam_pose_to_numpy(gtsam_pose):
+    """Convert GTSAM pose to numpy arrays 
+    (position, orientation)"""
+    position = np.array([
+        gtsam_pose.x(),
+        gtsam_pose.y(),
+        gtsam_pose.z()])
+    euler = np.array([
+        gtsam_pose.rotation().roll(),
+        gtsam_pose.rotation().pitch(),
+        gtsam_pose.rotation().yaw()])
+    return position, euler
+
+
+def plot_horizontal_trajectory(pose_estimate, x_lim, y_lim):
+    plt.suptitle("Horizontal trajectory")
+
+    plt.plot(pose_estimate[:, 1], pose_estimate[:, 0], color="blue")
+    #plt.plot(ground_truth[:, 1], ground_truth[:, 0], color="gray", linestyle="dashed")
+    plt.xlabel("y [m]")
+    plt.ylabel("x [m]")
+    plt.legend(["estimate", "ground truth"])
+    plt.xlim(x_lim)
+    plt.ylim(y_lim)
+    plt.grid()
+
+
+# Noise priors på uwb
+# rotasjonene på uwb ser merkelige ut (sykt små tall)
 
 test = TrilaterationEstimates()
 data = test.run()
