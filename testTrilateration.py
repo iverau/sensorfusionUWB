@@ -124,14 +124,12 @@ class TrilaterationEstimates:
     def run(self):
         imu_measurements = []
         for measurement in self.dataset.generate_trilateration_combo_measurements():
-            # Pre integrer states til man når en ny landmark
-            # Når man når ny landmark, sett initial value til den forrige staten pluss odometri resultatet
-            # Legg så inn landmarket i grafen
-            # Legge inn landmarks målinger helt til det kommer en IMU måling
-            # Oppdater initial values når alle UWB nodene er sett
             # TODO: Få lagt inn rett transformasjoner 
 
+
+            # If the measurment is an UWB measurement, calculate the preintegrated measurement and add the UWB measurment
             if measurement.measurement_type.value == "UWB_Tri":
+                # Add the imu measurment if present
                 if imu_measurements:
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
                     self.add_imu_factor(integrated_measurement, imu_measurements) 
@@ -139,6 +137,7 @@ class TrilaterationEstimates:
                     # Reset the IMU measurement list
                     imu_measurements = []
                 
+                # Add the UWB pose
                 uwb_pose = self.add_UWB_to_graph(self.factor_graph, measurement)
                 self.uwb_counter += 1
                 self.graph_values.insert(self.pose_variables[-1], uwb_pose)
@@ -173,10 +172,6 @@ class TrilaterationEstimates:
         plot_horizontal_trajectory(positions, [-20, 20], [-100, -65])
         plt.show()
 
-
-
-# Noise priors på uwb
-# rotasjonene på uwb ser merkelige ut (sykt små tall)
 
 test = TrilaterationEstimates()
 data = test.run()
