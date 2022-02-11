@@ -1,5 +1,7 @@
 from enum import Enum
 import numpy as np
+import gtsam
+
 
 UWB_OFFSET = 0.85
 UWB_STD = 0.2
@@ -8,13 +10,12 @@ class MeasurementType(Enum):
     GNSS = "GNSS"
     IMU = "IMU"
     UWB = "UWB"
+    UWB_TRI="UWB_Tri"
 
 class Measurement:
 
     def __init__(self, topic, t) -> None:
         self.measurement_type = Measurement.select_measurement_type(topic)
-        #self.msg = msg
-        #self.create_measurement(msg)
         self.time = t
 
     @staticmethod
@@ -25,6 +26,8 @@ class Measurement:
             return MeasurementType.UWB
         elif topic == "/ublox1/fix":
             return MeasurementType.GNSS
+        elif topic == "uwb_trilateration":
+            return MeasurementType.UWB_TRI
         else:
             raise NotImplementedError
 
@@ -79,7 +82,28 @@ class IMU_Measurement(Measurement):
         self.linear_vel_covariance = np.diag([msg.linear_acceleration_covariance[4], msg.linear_acceleration_covariance[0], msg.linear_acceleration_covariance[8]])
 
     def __repr__(self) -> str:
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.angular_vel}, Id={self.linear_vel}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Angular_vel={self.angular_vel}, Linear_vel={self.linear_vel}]" 
+
+class UWB_Trilateration_Measurement(Measurement):
+
+    def __init__(self, topic, msg, t) -> None:
+        super().__init__(topic, t)
+        self.extract_measurement(msg)
+
+    def extract_measurement(self, msg):
+        self.x = msg["x"]
+        self.y = msg["y"]
+        self.z = msg["z"]
+        self.covX = 1
+        self.covY = 1
+        self.covZ = 9
+
+        self.position = [self.x, self.y, self.z]
+        self.covariance = np.diag([self.covX, self.covY, self.covZ])
+        self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / self.covX ** 2, 1.0 / self.covY ** 2, 1.0 / self.covZ ** 2]))
+
+    def __repr__(self) -> str:
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
 
 
 def generate_measurement(topic, msg, t):
@@ -88,5 +112,7 @@ def generate_measurement(topic, msg, t):
         return UWB_Measurement(topic, msg, t)
     elif measurement_type == MeasurementType.IMU:
         return IMU_Measurement(topic, msg, t)
+    elif measurement_type == MeasurementType.UWB_TRI:
+        return UWB_Trilateration_Measurement(topic, msg, t)
     else:
         raise NotImplementedError

@@ -1,0 +1,3 @@
+gtsam
+gtsam_eigency
+gtsam_unstable
