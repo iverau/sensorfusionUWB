@@ -9,6 +9,10 @@ from gtsam.symbol_shorthand import X, L, V, B
 from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy
+from Plotting.plot_gtsam import plot_horizontal_trajectory
+
+
 class TrilaterationEstimates:
 
     # Requires dataset_sensor_config to be IMU_TRI
@@ -169,46 +173,6 @@ class TrilaterationEstimates:
         plot_horizontal_trajectory(positions, [-20, 20], [-100, -65])
         plt.show()
 
-def gtsam_pose_from_result(gtsam_result):
-    poses = gtsam.utilities.allPose3s(gtsam_result)
-    keys = gtsam.KeyVector(poses.keys())
-
-    positions, eulers = [], []
-    for key in keys:
-        if gtsam_result.exists(key):
-            pose = gtsam_result.atPose3(key)
-            pos, euler = gtsam_pose_to_numpy(pose)
-            positions.append(pos)
-            eulers.append(euler)
-    positions = np.array(positions)
-    eulers = np.array(eulers)
-    return positions, eulers
-
-def gtsam_pose_to_numpy(gtsam_pose):
-    """Convert GTSAM pose to numpy arrays 
-    (position, orientation)"""
-    position = np.array([
-        gtsam_pose.x(),
-        gtsam_pose.y(),
-        gtsam_pose.z()])
-    euler = np.array([
-        gtsam_pose.rotation().roll(),
-        gtsam_pose.rotation().pitch(),
-        gtsam_pose.rotation().yaw()])
-    return position, euler
-
-
-def plot_horizontal_trajectory(pose_estimate, x_lim, y_lim):
-    plt.suptitle("Horizontal trajectory")
-
-    plt.plot(pose_estimate[:, 1], pose_estimate[:, 0], color="blue")
-    #plt.plot(ground_truth[:, 1], ground_truth[:, 0], color="gray", linestyle="dashed")
-    plt.xlabel("y [m]")
-    plt.ylabel("x [m]")
-    plt.legend(["estimate", "ground truth"])
-    plt.xlim(x_lim)
-    plt.ylim(y_lim)
-    plt.grid()
 
 
 # Noise priors på uwb
