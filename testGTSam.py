@@ -144,24 +144,19 @@ class GtSAMTest:
         imu_measurements = []
 
         for measurement in self.dataset.generate_measurements():
-            
-            # Pre integrer states til man når en ny landmark
-            # Når man når ny landmark, sett initial value til den forrige staten pluss odometri resultatet
-            # Legg så inn landmarket i grafen
-            # Legge inn landmarks målinger helt til det kommer en IMU måling
-            # Oppdater initial values når alle UWB nodene er sett
-            # TODO: Få lagt inn rett transformasjoner 
-
             if measurement.measurement_type.value == "UWB":
+                integrated_measurement = None
                 if imu_measurements:
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
                     self.add_imu_factor(integrated_measurement, imu_measurements) 
 
                     # Reset the IMU measurement list
                     imu_measurements = []
-                
+                print(self.initial_pose)
+                navstate = gtsam.NavState(self.initial_pose.rotation(), self.initial_pose.translation(), self.iniial_velocity)
+                print(integrated_measurement.predict(navstate, self.initial_bias))
+                exit()
                 self.add_UWB_to_graph(self.graph, measurement)
-                # TODO: What this should do
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
@@ -170,7 +165,8 @@ class GtSAMTest:
         
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 5:
-                print("Her :)")
+                #print("Her :)")
+                #print(self.graph)
                 #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
                 

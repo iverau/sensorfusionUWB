@@ -13,7 +13,7 @@ class SensorConfigurations:
 class DatasetSettingsBase:
     #bag_start_time_offset = 0
     bag_duration = 100
-    enabled_topics = SensorConfigurations.IMU_TRI
+    enabled_topics = SensorConfigurations.UWB_IMU
     _filename = None
 
     def __init__(self, dataset_number: int):
