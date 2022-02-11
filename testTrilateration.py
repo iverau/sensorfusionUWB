@@ -169,7 +169,7 @@ class TrilaterationEstimates:
         positions, eulers = gtsam_pose_from_result(result)
         print("\n-- Plot pose")
         plt.figure(1)
-        plot_horizontal_trajectory(positions, [-20, 20], [-100, -65])
+        plot_horizontal_trajectory(positions, [-100, 20], [-160, -65])
         plt.show()
 
 

@@ -36,5 +36,8 @@ class UWB_Position:
         self.y =    mat_file["beacon"][0][0][2][0][0]
         self.z =    mat_file["beacon"][0][0][3][0][0]
 
+    def position(self):
+        return [self.x, self.y, self.z]
+
     def __repr__(self) -> str:
         return f"UWB_Position[id = {self.id}, x = {self.x}, y = {self.y}, z = {self.z}]"
