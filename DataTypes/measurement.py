@@ -28,6 +28,8 @@ class Measurement:
             return MeasurementType.GNSS
         elif topic == "uwb_trilateration":
             return MeasurementType.UWB_TRI
+        elif topic == "/sentiboard/adis":
+            return MeasurementType.IMU
         else:
             raise NotImplementedError
 
