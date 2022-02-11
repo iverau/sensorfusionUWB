@@ -11,6 +11,8 @@ import matplotlib.pyplot as plt
 
 class TrilaterationEstimates:
 
+    # Requires dataset_sensor_config to be IMU_TRI
+
     def __init__(self) -> None:
         self.dataset = RosDataTrilateration(4)
         isam_params = gtsam.ISAM2Params()

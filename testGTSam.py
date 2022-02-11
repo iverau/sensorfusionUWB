@@ -6,6 +6,7 @@ import numpy as np
 from settings import DATASET_NUMBER
 from DataTypes.uwb_position import UWB_Ancors_Descriptor
 
+from scipy.spatial.transform import Rotation as R
 from Sensors.IMU import IMU
 
 class GtSAMTest:
@@ -53,7 +54,12 @@ class GtSAMTest:
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
-        self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
+        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
+        T_init = self.ground_truth.initial_pose()[3:]
+        self.initial_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
+
+
+        #self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
         self.iniial_velocity = self.ground_truth.initial_velocity()
         self.initial_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
 
@@ -163,7 +169,7 @@ class GtSAMTest:
                 
         
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 4:
+            if len(self.uwb_counter) == 5:
                 print("Her :)")
                 #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
