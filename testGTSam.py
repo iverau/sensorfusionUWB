@@ -52,8 +52,8 @@ class GtSAMTest:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
-        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 10000.0)
+        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5])
+        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 100.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
@@ -189,11 +189,11 @@ class GtSAMTest:
                 #if iteration_number == 2:
                 #    break
                 self.navstate = gtsam.NavState(self.initial_pose.rotation(), self.initial_pose.translation(), self.iniial_velocity)
-                print("Navstate over time", self.navstate)
+                #print("Navstate over time", self.navstate)
                 #print("Length of pose variables", len(self.pose_variables))
 
 
-
+        result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
 
 
@@ -201,7 +201,6 @@ class GtSAMTest:
         #print("UWB pos:", self.uwb_positions.UWB_position_map)
 
         print("\n-- Plot pose")
-        print(len(positions))
         #plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()))
         plt.show()
