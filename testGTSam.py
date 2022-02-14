@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 from Sensors.IMU import IMU
 
 import matplotlib.pyplot as plt
-from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
 from Plotting.plot_gtsam import plot_horizontal_trajectory
 
 
@@ -37,14 +37,11 @@ class GtSAMTest:
         self.initial_values = gtsam.Values()
         self.graph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        
         # Dummy variables for counting amount of seen uwbs in the current pose graph
         self.uwb_counter = set()
 
 
     def initialize_graph(self):
-
-        graph = gtsam.NonlinearFactorGraph()
 
         # Defining the state
         X1 = X(0)
@@ -62,7 +59,6 @@ class GtSAMTest:
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
         self.initial_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
-
 
         #self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
         self.iniial_velocity = self.ground_truth.initial_velocity()
@@ -96,8 +92,8 @@ class GtSAMTest:
 
             # Creates an initial estimate of the landmark pose
             self.initial_values.insert(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z))
-            self.graph.add(gtsam.PriorFactorPoint3(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z), gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)))
-            #self.graph.add(gtsam.PriorFactorPose3(X1, self.initial_pose, prior_noise_x))
+            self.graph.add(gtsam.PriorFactorVector(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z), gtsam.noiseModel.Isotropic.Sigma(3, 0.0001)))
+
 
         return self.landmarks_variables[uwb_measurement.id]
 
@@ -173,9 +169,6 @@ class GtSAMTest:
         
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 5:
-                print("Her :)", len(self.pose_variables))
-                #print(self.graph)
-                #print(self.initial_values)
                 self.isam.update(self.graph, self.initial_values)
                 result = self.isam.calculateEstimate()
                 
@@ -186,12 +179,14 @@ class GtSAMTest:
                 self.iniial_velocity = result.atVector(self.velocity_variables[-1])
                 self.initial_bias = result.atConstantBias(self.imu_bias_variables[-1])
 
-                if len(self.pose_variables)  > 569:
+                if len(self.pose_variables)  > 1000:
                     break
 
         positions, eulers = gtsam_pose_from_result(result)
+
+
         print("\n-- Plot pose")
-        plt.figure(1)
+        #plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200])
         plt.show()
 

@@ -1,3 +1,5 @@
-Få koden til å fungere
-Få inn initiel condition for all states
-Legge inn UWB transform til body
+Mulige feilkilder:
+
+- Ikke fiksa UWB transformen til body
+- Initial conditions er "feil" (tilsynelatende ihvertfall)
+

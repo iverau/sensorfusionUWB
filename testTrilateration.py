@@ -9,7 +9,7 @@ from gtsam.symbol_shorthand import X, L, V, B
 from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
-from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
 from Plotting.plot_gtsam import plot_horizontal_trajectory
 
 
@@ -37,6 +37,7 @@ class TrilaterationEstimates:
         self.graph_values = gtsam.Values()
         self.factor_graph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
+        print(self.ground_truth.initial_pose())
 
 
     def initialize_graph(self):
@@ -63,6 +64,8 @@ class TrilaterationEstimates:
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
         self.current_velocity = self.ground_truth.initial_velocity()
         self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
+
+        print(self.current_pose)
 
         # Add the priors to the graph and value list
         self.factor_graph.add(gtsam.PriorFactorPose3(X1, self.current_pose, prior_noise_x))
@@ -153,7 +156,6 @@ class TrilaterationEstimates:
             # Update ISAM with graph and initial_values
             if self.uwb_counter == 2:
                 self.isam.update(self.factor_graph, self.graph_values)
-                
                 result = self.isam.calculateEstimate()
 
                 self.reset_pose_graph_variables()
@@ -168,6 +170,8 @@ class TrilaterationEstimates:
                 
         positions, eulers = gtsam_pose_from_result(result)
         print("\n-- Plot pose")
+        print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables))
+
         plt.figure(1)
         plot_horizontal_trajectory(positions, [-100, 20], [-160, -65])
         plt.show()

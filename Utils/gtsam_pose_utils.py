@@ -16,6 +16,16 @@ def gtsam_pose_from_result(gtsam_result):
     eulers = np.array(eulers)
     return positions, eulers
 
+
+def gtsam_landmark_from_results(gtsam_result, landmark_keys):
+
+    poses = {}
+    for key in landmark_keys:
+        if gtsam_result.exists(key):
+            pose = gtsam_result.atVector(key)
+            poses[key] = pose
+    return poses
+
 def gtsam_pose_to_numpy(gtsam_pose):
     """Convert GTSAM pose to numpy arrays 
     (position, orientation)"""
