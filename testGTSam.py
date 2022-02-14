@@ -59,7 +59,7 @@ class GtSAMTest:
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
         self.initial_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
-        print(self.initial_pose)
+        #print(self.initial_pose)
 
         #self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
         self.iniial_velocity = self.ground_truth.initial_velocity()
@@ -145,7 +145,7 @@ class GtSAMTest:
         self.initial_values.insert(self.pose_variables[-1], self.navstate.pose())
         self.initial_values.insert(self.velocity_variables[-1], self.navstate.velocity())
         self.initial_values.insert(self.imu_bias_variables[-1], self.initial_bias)
-        self.graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / 1 ** 2, 1.0 / 1 ** 2, 9 ** 2]))))
+        self.graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(len(imu_measurements)*imu_measurements[0].variance_vector())))
 
 
     def run(self):
@@ -170,7 +170,7 @@ class GtSAMTest:
                 
         
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 4:
+            if len(self.uwb_counter) == 5:
 
                 self.isam.update(self.graph, self.initial_values)
                 result = self.isam.calculateEstimate()
@@ -182,23 +182,26 @@ class GtSAMTest:
                 self.initial_pose = result.atPose3(self.pose_variables[-1]) 
                 self.iniial_velocity = result.atVector(self.velocity_variables[-1])
                 self.initial_bias = result.atConstantBias(self.imu_bias_variables[-1])
-                print(self.initial_values)
+                #print(self.initial_values)
                 iteration_number +=1
 
-                if iteration_number == 1:
-                    break
-                #self.navstate = gtsam.NavState(self.initial_pose.rotation(), self.initial_pose.translation(), self.iniial_velocity)
-                #print("Navstate over time", self.navstate)
+
+                #if iteration_number == 2:
+                #    break
+                self.navstate = gtsam.NavState(self.initial_pose.rotation(), self.initial_pose.translation(), self.iniial_velocity)
+                print("Navstate over time", self.navstate)
                 #print("Length of pose variables", len(self.pose_variables))
 
 
 
         positions, eulers = gtsam_pose_from_result(result)
 
+
         #print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables.values()), "\n")
         #print("UWB pos:", self.uwb_positions.UWB_position_map)
 
         print("\n-- Plot pose")
+        print(len(positions))
         #plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()))
         plt.show()
