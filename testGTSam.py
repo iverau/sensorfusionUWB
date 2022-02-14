@@ -53,12 +53,13 @@ class GtSAMTest:
 
         # Set priors
         prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
-        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 1000.0)
+        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 10000.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
         self.initial_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
+        print(self.initial_pose)
 
         #self.initial_pose = gtsam.Pose3(self.ground_truth.initial_pose())
         self.iniial_velocity = self.ground_truth.initial_velocity()
@@ -80,6 +81,7 @@ class GtSAMTest:
     def add_UWB_to_graph(self, graph, uwb_measurement):
         
         #print("ISAM object", self.isam)
+        #print("Measurement",uwb_measurement)
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])
         self.graph.add(gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
@@ -143,13 +145,13 @@ class GtSAMTest:
         self.initial_values.insert(self.pose_variables[-1], self.navstate.pose())
         self.initial_values.insert(self.velocity_variables[-1], self.navstate.velocity())
         self.initial_values.insert(self.imu_bias_variables[-1], self.initial_bias)
-        self.graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / 1 ** 2, 1.0 / 1 ** 2, 1.0 / 9 ** 2]))))
+        self.graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / 1 ** 2, 1.0 / 1 ** 2, 9 ** 2]))))
 
 
     def run(self):
         # Dummy variable for storing imu measurements
         imu_measurements = []
-
+        iteration_number = 0
         for measurement in self.dataset.generate_measurements():
             if measurement.measurement_type.value == "UWB":
                 integrated_measurement = None
@@ -168,26 +170,37 @@ class GtSAMTest:
                 
         
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 5:
+            if len(self.uwb_counter) == 4:
+
                 self.isam.update(self.graph, self.initial_values)
                 result = self.isam.calculateEstimate()
                 
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
                 
+                
                 self.initial_pose = result.atPose3(self.pose_variables[-1]) 
                 self.iniial_velocity = result.atVector(self.velocity_variables[-1])
                 self.initial_bias = result.atConstantBias(self.imu_bias_variables[-1])
+                print(self.initial_values)
+                iteration_number +=1
 
-                if len(self.pose_variables)  > 1000:
+                if iteration_number == 1:
                     break
+                #self.navstate = gtsam.NavState(self.initial_pose.rotation(), self.initial_pose.translation(), self.iniial_velocity)
+                #print("Navstate over time", self.navstate)
+                #print("Length of pose variables", len(self.pose_variables))
+
+
 
         positions, eulers = gtsam_pose_from_result(result)
 
+        #print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables.values()), "\n")
+        #print("UWB pos:", self.uwb_positions.UWB_position_map)
 
         print("\n-- Plot pose")
         #plt.figure(1)
-        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200])
+        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()))
         plt.show()
 
 testing = GtSAMTest()

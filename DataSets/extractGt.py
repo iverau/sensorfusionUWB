@@ -26,7 +26,8 @@ class GroundTruthEstimates:
         """
 
         self.extract_data()
-        self.start_index = GroundTruthEstimates.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+        self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+        print("Index", self.start_index)
 
 
     def initial_pose(self):
@@ -54,9 +55,9 @@ class GroundTruthEstimates:
         # Compensate for time offset
         self.time -= self.datasetSettings.gt_time_offset
 
-    @staticmethod
-    def find_index_closest(time_array, start_time):
+    def find_index_closest(self, time_array, start_time):
         time_array -= time_array[0]
+        time_array += self.datasetSettings.gt_time_offset
         return (np.abs(time_array - start_time)).argmin()
 
     def mat_file_to_dict(self):
@@ -78,5 +79,3 @@ class GroundTruthEstimates:
             return DatasetSettings_Trondheim3()
         else:
             return DatasetSettings_Trondheim4()
-
-gt = GroundTruthEstimates(4)
