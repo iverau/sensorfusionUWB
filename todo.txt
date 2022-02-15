@@ -1,5 +1,17 @@
+Todos:
+- Legge inn gt mot estimater
+- Legge inn plots av alle tilstander
+
+
+
 Mulige feilkilder:
 
 - Ikke fiksa UWB transformen til body
-- Initial conditions er "feil" (tilsynelatende ihvertfall)
+- Få inn ground truth :)
+
+Komboer:
+uwb-tri vs gps 
+uwb-range only
+uwb-range gps imu
+
 

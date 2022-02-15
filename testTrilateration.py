@@ -173,7 +173,7 @@ class TrilaterationEstimates:
         print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables))
 
         plt.figure(1)
-        plot_horizontal_trajectory(positions, [-100, 20], [-160, -65], {})
+        plot_horizontal_trajectory(positions, [-100, 20], [-160, -65], self.landmarks_variables)
         plt.show()
 
 

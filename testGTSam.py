@@ -11,32 +11,33 @@ from Sensors.IMU import IMU
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_poses
 
 
 class GtSAMTest:
 
 
     def __init__(self) -> None:
-        self.dataset = ROSData(DATASET_NUMBER)
-        isam_params = gtsam.ISAM2Params()
+        self.dataset: ROSData = ROSData(DATASET_NUMBER)
+        isam_params: gtsam.ISAM2Params = gtsam.ISAM2Params()
         isam_params.setFactorization("QR")
         isam_params.setRelinearizeSkip(10)
-        self.isam = gtsam.ISAM2(isam_params)
-        self.uwb_positions = UWB_Ancors_Descriptor(DATASET_NUMBER)
-        self.ground_truth = GroundTruthEstimates(DATASET_NUMBER)
-        self.imu_params = IMU()
+        self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
+        self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
+        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER)
+        self.imu_params: IMU = IMU()
+
 
         # Tracked variables for IMU and UWB
-        self.pose_variables = []
-        self.velocity_variables = []
-        self.imu_bias_variables = []
-        self.landmarks_variables = {}
-        self.uwb_counter = set()
+        self.pose_variables: list = []
+        self.velocity_variables: list = []
+        self.imu_bias_variables: list = []
+        self.landmarks_variables: dict = {}
+        self.uwb_counter: set = set()
 
         # Setting up gtsam values
-        self.graph_values = gtsam.Values()
-        self.factor_graph = gtsam.NonlinearFactorGraph()
+        self.graph_values: gtsam.Values = gtsam.Values()
+        self.factor_graph: gtsam.NonlinearFactorGraph  = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
         # Dummy variables for counting amount of seen uwbs in the current pose graph
 
@@ -53,7 +54,7 @@ class GtSAMTest:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([1e-5, 1e-5, 1e-5, 1e-5, 1e-5, 1e-5])
+        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([1e-3, 1e-3, 1e-3, 0.1, 0.1, 2])
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 100.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
@@ -147,7 +148,6 @@ class GtSAMTest:
         iteration_number = 0
         for measurement in self.dataset.generate_measurements():
             if measurement.measurement_type.value == "UWB":
-                integrated_measurement = None
                 if imu_measurements:
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
                     self.add_imu_factor(integrated_measurement, imu_measurements) 
@@ -156,14 +156,18 @@ class GtSAMTest:
                     imu_measurements = []
 
                 self.add_UWB_to_graph(measurement)
+                #self.isam.update()
+
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
                 imu_measurements.append(measurement)
-                
-        
+            
+            iteration_number += 1
+            print("Iteration", iteration_number, len(self.pose_variables))
+
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 5:
+            if len(self.uwb_counter) == 3:
 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
@@ -175,8 +179,8 @@ class GtSAMTest:
                 self.current_pose = result.atPose3(self.pose_variables[-1]) 
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
-                iteration_number +=1
 
+                #print("Current pose", self.current_pose)
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
 
 
@@ -186,7 +190,13 @@ class GtSAMTest:
 
 
         print("\n-- Plot pose")
+        plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()))
+        plt.figure(2)
+        plot_poses(positions)
+        plt.figure(3)
+        plot_poses(eulers)
+
         plt.show()
 
 testing = GtSAMTest()
