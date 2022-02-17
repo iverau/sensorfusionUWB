@@ -20,7 +20,7 @@ class GtSAMTest:
     def __init__(self) -> None:
         self.dataset: ROSData = ROSData(DATASET_NUMBER)
         isam_params: gtsam.ISAM2Params = gtsam.ISAM2Params()
-        isam_params.setFactorization("QR")
+        isam_params.setFactorization("Cholesky")
         isam_params.setRelinearizeSkip(10)
         self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
@@ -40,7 +40,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph  = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        sns.set()
+        #sns.set()
 
 
 
@@ -55,7 +55,7 @@ class GtSAMTest:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([1e-3, 1e-3, 1e-3, 0.1, 0.1, 2])
+        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([2, 2, 2, 0.1, 0.1, 2])
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 100.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 

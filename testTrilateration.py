@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory
+from Plotting.plot_gtsam import plot_horizontal_trajectory_old
 
 
 class TrilaterationEstimates:
@@ -173,7 +173,7 @@ class TrilaterationEstimates:
         print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables))
 
         plt.figure(1)
-        plot_horizontal_trajectory(positions, [-100, 20], [-160, -65], self.landmarks_variables)
+        plot_horizontal_trajectory_old(positions, [-100, 20], [-160, -65], self.landmarks_variables)
         plt.show()
 
 
