@@ -11,8 +11,8 @@ from Sensors.IMU import IMU
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_poses
-
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels
+import seaborn as sns
 
 class GtSAMTest:
 
@@ -34,12 +34,13 @@ class GtSAMTest:
         self.imu_bias_variables: list = []
         self.landmarks_variables: dict = {}
         self.uwb_counter: set = set()
+        self.time_stamps: list = []
 
         # Setting up gtsam values
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph  = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        # Dummy variables for counting amount of seen uwbs in the current pose graph
+        sns.set()
 
 
 
@@ -73,6 +74,7 @@ class GtSAMTest:
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
+        self.time_stamps.append(self.ground_truth.time[0])
 
     def add_UWB_to_graph(self, uwb_measurement):
         
@@ -149,6 +151,7 @@ class GtSAMTest:
         for measurement in self.dataset.generate_measurements():
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
+                    self.time_stamps.append(measurement.time.to_time())
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
                     self.add_imu_factor(integrated_measurement, imu_measurements) 
 
@@ -165,6 +168,9 @@ class GtSAMTest:
             
             iteration_number += 1
             print("Iteration", iteration_number, len(self.pose_variables))
+
+
+
 
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 3:
@@ -191,11 +197,11 @@ class GtSAMTest:
 
         print("\n-- Plot pose")
         plt.figure(1)
-        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()))
+        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()), self.ground_truth)
         plt.figure(2)
-        plot_poses(positions)
+        plot_position(positions, self.ground_truth, self.time_stamps)
         plt.figure(3)
-        plot_poses(eulers)
+        plot_angels(eulers, self.ground_truth, self.time_stamps)
 
         plt.show()
 

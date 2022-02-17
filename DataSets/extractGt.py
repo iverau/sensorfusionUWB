@@ -26,7 +26,7 @@ class GroundTruthEstimates:
         """
 
         self.extract_data()
-        self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+
         print("Index", self.start_index)
 
 
@@ -54,6 +54,16 @@ class GroundTruthEstimates:
         
         # Compensate for time offset
         self.time -= self.datasetSettings.gt_time_offset
+        self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+
+        self.gt_transelation = np.array(self.data_dictionary["p_lb_L_hat"]).astype("float")[:, self.start_index:]
+        self.gt_angels = np.zeros((len(self.time) - self.start_index, 3)).astype("float")
+        self.gt_angels[:, 0] = self.roll.copy()[self.start_index:]
+        self.gt_angels[:, 1] = self.pitch.copy()[self.start_index:]
+        self.gt_angels[:, 2] = self.yaw.copy()[self.start_index:]
+        self.time = self.time[self.start_index:]
+
+
 
     def find_index_closest(self, time_array, start_time):
         time_array -= time_array[0]

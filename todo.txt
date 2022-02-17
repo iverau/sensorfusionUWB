@@ -13,5 +13,5 @@ Komboer:
 uwb-tri vs gps 
 uwb-range only
 uwb-range gps imu
-
+Ta med tidsestimater (fint plott)
 
