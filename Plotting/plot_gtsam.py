@@ -39,7 +39,7 @@ def plot_position(position_estimates, ground_truth, time_steps):
 
     plt.suptitle("Positions")
     plt.subplot(311)
-    plt.plot(time_steps[:-1], position_estimates[:, 0])
+    plt.plot(time_steps, position_estimates[:, 0])
     plt.plot(ground_truth.time  , ground_truth.gt_transelation[0, :])
     plt.legend(["Estimate", "Ground truth"])
 
@@ -47,15 +47,15 @@ def plot_position(position_estimates, ground_truth, time_steps):
     plt.ylabel("X [m]")
 
     plt.subplot(312)
-    plt.plot(time_steps[:-1], position_estimates[:, 1])
-    plt.plot(ground_truth.time  , ground_truth.gt_transelation[0, :])
+    plt.plot(time_steps, position_estimates[:, 1])
+    plt.plot(ground_truth.time  , ground_truth.gt_transelation[1, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Y [m]")
 
     plt.subplot(313)
-    plt.plot(time_steps[:-1], position_estimates[:, 2])
-    plt.plot(ground_truth.time  , ground_truth.gt_transelation[0, :])
+    plt.plot(time_steps, position_estimates[:, 2])
+    plt.plot(ground_truth.time  , ground_truth.gt_transelation[2, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Z [m]")
@@ -69,21 +69,21 @@ def plot_angels(euler_angels, ground_truth, time_steps):
 
     plt.suptitle("Angels")
     plt.subplot(311)
-    plt.plot(time_steps[:-1], r2d * euler_angels[:, 0])
+    plt.plot(time_steps, r2d * euler_angels[:, 0])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 0])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Roll [deg]")
 
     plt.subplot(312)
-    plt.plot(time_steps[:-1], r2d * euler_angels[:, 1])
+    plt.plot(time_steps, r2d * euler_angels[:, 1])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 1])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Pitch [deg]")
 
     plt.subplot(313)
-    plt.plot(time_steps[:-1], r2d * euler_angels[:, 2])
+    plt.plot(time_steps, r2d * euler_angels[:, 2])
     plt.plot(ground_truth.time, r2d * ground_truth.gt_angels[:, 2])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()

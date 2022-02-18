@@ -1,3 +1,4 @@
+from pyrfc3339 import generate
 import rosbag
 from .datasetSettings import *
 import rospy
@@ -48,7 +49,15 @@ class ROSData:
                 ell=pm.Ellipsoid("wgs84"),
                 deg=True,
         )
+        #print("NED Origin",np.array([n, e, d]))
         return np.array([n, e, d])
+
+    def generate_initialization_gnss_imu(self):
+        start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
+        end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
+        topics = ["/sentiboard/adis", "/ublox1/fix"]
+        for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
+            yield generate_measurement(topic, msg, t)
 
     def generate_measurements(self):
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):

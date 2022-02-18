@@ -13,7 +13,7 @@ Kalkulere hastigheten i samme tidspunkt
 
 class GroundTruthEstimates:
 
-    def __init__(self, dataset_id) -> None:
+    def __init__(self, dataset_id, pre_initialization=None) -> None:
         self.files = scipy.io.loadmat(GroundTruthEstimates.generate_path(dataset_id))
         self.datasetSettings = GroundTruthEstimates.select_dataset(dataset_id)
 
@@ -25,7 +25,7 @@ class GroundTruthEstimates:
               ('innov_covariance', 'O'), ('P_hat', 'O')])}
         """
 
-        self.extract_data()
+        self.extract_data(pre_initialization=pre_initialization)
 
         print("Index", self.start_index)
 
@@ -37,7 +37,7 @@ class GroundTruthEstimates:
         # Initial velcoity is set to 0 as it moves close to a straight line
         return np.array([self.v_north[self.start_index], self.v_east[self.start_index], self.v_down[self.start_index]])
 
-    def extract_data(self):
+    def extract_data(self, pre_initialization=None):
         self.mat_file_to_dict()
         self.time = np.array(self.data_dictionary["tow"][0])
         self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])
@@ -53,7 +53,11 @@ class GroundTruthEstimates:
         self.v_down = self.data_dictionary["v_eb_n_hat"][2]
         
         # Compensate for time offset
-        self.time -= self.datasetSettings.gt_time_offset
+        if pre_initialization:
+            self.time -= self.datasetSettings.gt_time_offset + 10
+        else:
+            self.time -= self.datasetSettings.gt_time_offset
+
         self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
 
         self.gt_transelation = np.array(self.data_dictionary["p_lb_L_hat"]).astype("float")[:, self.start_index:]

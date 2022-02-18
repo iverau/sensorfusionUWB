@@ -1,6 +1,7 @@
 from enum import Enum
 import numpy as np
 import gtsam
+import pymap3d as pm
 
 
 UWB_OFFSET = 0.85
@@ -114,6 +115,46 @@ class UWB_Trilateration_Measurement(Measurement):
         return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
 
 
+class GNSS_Measurement(Measurement):
+
+    def __init__(self, topic, msg, t) -> None:
+        super().__init__(topic, t)
+        self.extract_measurement(msg)
+
+    def convert_GNSS_to_NED(self, msg):
+        ned_origin = [63.43888731, 10.39601287, 41.59585029]
+        n, e, d = pm.geodetic2ned(
+                msg.latitude,
+                msg.longitude,
+                msg.altitude,
+                ned_origin[0],  # NED origin
+                ned_origin[1],  # NED origin
+                ned_origin[2],  # NED origin
+                ell=pm.Ellipsoid("wgs84"),
+                deg=True,
+        )
+        #print("NED Origin",np.array([n, e, d]))
+        return np.array([n, e, d])
+
+
+    def extract_measurement(self, msg):
+        # TODO: Finne ut av rekkefølgen på ting her :)
+        ned_data = self.convert_GNSS_to_NED(msg)
+        self.x = ned_data[1]
+        self.y = ned_data[0]
+        self.z = ned_data[2]
+        self.covX = 1
+        self.covY = 1
+        self.covZ = 9
+
+        self.position = [self.x, self.y, self.z]
+        self.covariance = np.diag([self.covX, self.covY, self.covZ])
+        self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / self.covX ** 2, 1.0 / self.covY ** 2, 1.0 / self.covZ ** 2]))
+
+    def __repr__(self) -> str:
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
+
+
 def generate_measurement(topic, msg, t):
     measurement_type =  Measurement.select_measurement_type(topic)
     if measurement_type == MeasurementType.UWB:
@@ -122,5 +163,7 @@ def generate_measurement(topic, msg, t):
         return IMU_Measurement(topic, msg, t)
     elif measurement_type == MeasurementType.UWB_TRI:
         return UWB_Trilateration_Measurement(topic, msg, t)
+    elif measurement_type == MeasurementType.GNSS:
+        return GNSS_Measurement(topic, msg, t)
     else:
         raise NotImplementedError
