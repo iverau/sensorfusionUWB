@@ -19,7 +19,6 @@ class ROSData:
         self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
-        print("Starttime",self.bag_start_time)
 
 
     def extract_initial_pose(self):

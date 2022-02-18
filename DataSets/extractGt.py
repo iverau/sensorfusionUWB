@@ -27,8 +27,6 @@ class GroundTruthEstimates:
 
         self.extract_data(pre_initialization=pre_initialization)
 
-        print("Index", self.start_index)
-
 
     def initial_pose(self):
         return np.array([self.roll[self.start_index], self.pitch[self.start_index], self.yaw[self.start_index], self.north[self.start_index], self.east[self.start_index], self.down[self.start_index]])
@@ -40,16 +38,16 @@ class GroundTruthEstimates:
     def extract_data(self, pre_initialization=None):
         self.mat_file_to_dict()
         self.time = np.array(self.data_dictionary["tow"][0])
-        self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])
-        self.east = np.array(self.data_dictionary["p_lb_L_hat"][1])
+        self.north = np.array(self.data_dictionary["p_lb_L_hat"][1])
+        self.east = np.array(self.data_dictionary["p_lb_L_hat"][0])
         self.down = np.array(self.data_dictionary["p_lb_L_hat"][2])
         self.roll = np.array(self.data_dictionary["roll_hat"][0])
         self.pitch = np.array(self.data_dictionary["pitch_hat"][0])
         self.yaw = np.array(self.data_dictionary["yaw_hat"][0])
 
 
-        self.v_north = self.data_dictionary["v_eb_n_hat"][0]
-        self.v_east = self.data_dictionary["v_eb_n_hat"][1]
+        self.v_north = self.data_dictionary["v_eb_n_hat"][1]
+        self.v_east = self.data_dictionary["v_eb_n_hat"][0]
         self.v_down = self.data_dictionary["v_eb_n_hat"][2]
         
         # Compensate for time offset

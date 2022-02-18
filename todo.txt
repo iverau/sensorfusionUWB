@@ -5,9 +5,7 @@ Todos:
 
 
 Mulige feilkilder:
-
-- Ikke fiksa UWB transformen til body
-- Få inn ground truth :)
+- Fikse posisjonsdata (med tanke på NED)
 
 Komboer:
 uwb-tri vs gps 
