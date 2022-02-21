@@ -24,8 +24,8 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
     x_list = []
     y_list = []
     for p in uwb_beacons.values():
-        x_list.append(p[0])
-        y_list.append(p[1])
+        x_list.append(p[1])
+        y_list.append(p[0])
 
     plt.scatter(x_list, y_list)
     plt.plot(position_estimates[:, 1], position_estimates[:, 0], color="blue")
