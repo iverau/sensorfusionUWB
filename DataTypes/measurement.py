@@ -149,7 +149,7 @@ class GNSS_Measurement(Measurement):
 
         self.position = [self.x, self.y, self.z]
         self.covariance = np.diag([self.covX, self.covY, self.covZ])
-        self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / self.covX ** 2, 1.0 / self.covY ** 2, 1.0 / self.covZ ** 2]))
+        self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5]))
 
     def __repr__(self) -> str:
         return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 

@@ -36,6 +36,8 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 def plot_position(position_estimates, ground_truth, time_steps):
     time_steps[1:] -= time_steps[1] - time_steps[0]
+    print("Start time estimates", time_steps[0])
+    print("Start time gt", ground_truth.time[0] )
 
     plt.suptitle("Positions")
     plt.subplot(311)

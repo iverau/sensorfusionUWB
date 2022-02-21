@@ -75,6 +75,7 @@ class GtSAMTest:
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
         self.time_stamps.append(self.ground_truth.time[0])
+        print("Initial time",self.ground_truth.time[0])
 
     def add_UWB_to_graph(self, uwb_measurement):
         
@@ -183,7 +184,6 @@ class GtSAMTest:
         # 10 secs of GNSS
         for measurement in self.dataset.generate_initialization_gnss_imu():
             if measurement.measurement_type.value == "GNSS":
-
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
@@ -191,6 +191,7 @@ class GtSAMTest:
 
                     # Reset the IMU measurement list
                     imu_measurements = []
+                    self.isam.update()
 
                 gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
                 gnss_counter += 1
@@ -214,6 +215,7 @@ class GtSAMTest:
                 gnss_counter = 0
 
 
+
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
             
@@ -225,9 +227,9 @@ class GtSAMTest:
 
                     # Reset the IMU measurement list
                     imu_measurements = []
+                    self.isam.update()
 
                 self.add_UWB_to_graph(measurement)
-                #self.isam.update()
 
 
             elif measurement.measurement_type.value == "IMU":
