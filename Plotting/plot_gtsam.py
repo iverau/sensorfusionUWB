@@ -7,11 +7,11 @@ def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, gr
     x_list = []
     y_list = []
     for p in uwb_beacons.values():
-        x_list.append(p[0])
-        y_list.append(p[1])
+        x_list.append(p[1])
+        y_list.append(p[0])
 
     plt.scatter(x_list, y_list)
-    plt.plot(ground_truth.gt_transelation[0], ground_truth.gt_transelation[1], color="red")
+    plt.plot(ground_truth.gt_transelation[1], ground_truth.gt_transelation[0], color="red")
     plt.plot(position_estimates[:, 1], position_estimates[:, 0], color="blue")
     plt.xlabel("East [m]")
     plt.ylabel("North [m]")
@@ -36,31 +36,29 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 def plot_position(position_estimates, ground_truth, time_steps):
     time_steps[1:] -= time_steps[1] - time_steps[0]
-    print("Start time estimates", time_steps[0])
-    print("Start time gt", ground_truth.time[0] )
 
     plt.suptitle("Positions")
     plt.subplot(311)
-    plt.plot(time_steps, position_estimates[:, 1])
+    plt.plot(time_steps, position_estimates[:, 0])
     plt.plot(ground_truth.time  , ground_truth.gt_transelation[0, :])
     plt.legend(["Estimate", "Ground truth"])
 
     plt.grid()
-    plt.ylabel("X [m]")
+    plt.ylabel("North [m]")
 
     plt.subplot(312)
-    plt.plot(time_steps, position_estimates[:, 0])
+    plt.plot(time_steps, position_estimates[:, 1])
     plt.plot(ground_truth.time  , ground_truth.gt_transelation[1, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
-    plt.ylabel("Y [m]")
+    plt.ylabel("East [m]")
 
     plt.subplot(313)
     plt.plot(time_steps, position_estimates[:, 2])
     plt.plot(ground_truth.time  , ground_truth.gt_transelation[2, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
-    plt.ylabel("Z [m]")
+    plt.ylabel("Down [m]")
 
     plt.tight_layout()
 

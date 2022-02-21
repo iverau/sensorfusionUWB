@@ -55,7 +55,7 @@ class GtSAMTest:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([2, 2, 2, 0.1, 0.1, 2])
+        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
         prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 100.0)
         prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.1, 5e-05, 5e-05, 5e-05]))
 
@@ -63,6 +63,9 @@ class GtSAMTest:
         T_init = self.ground_truth.initial_pose()[3:]
 
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
+
+        print(self.current_pose)
+
         self.current_velocity = self.ground_truth.initial_velocity()
         self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
         self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
@@ -82,6 +85,7 @@ class GtSAMTest:
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas([uwb_measurement.std])
         self.factor_graph.add(gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
+        #print("Factor", gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
 
 
     def get_UWB_landmark(self, uwb_measurement):
@@ -218,6 +222,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
+            break
             
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
@@ -260,13 +265,14 @@ class GtSAMTest:
 
                 #print("Current pose", self.current_pose)
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
-
-                if len(self.pose_variables) > 30:
+                if len(self.pose_variables) > 300:
                     break
 
+
+        self.isam.update(self.factor_graph, self.graph_values)
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
-
+        print("Postion length:", len(positions))
 
 
         print("\n-- Plot pose")

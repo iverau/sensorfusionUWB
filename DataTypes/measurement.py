@@ -140,14 +140,14 @@ class GNSS_Measurement(Measurement):
     def extract_measurement(self, msg):
         # TODO: Finne ut av rekkefølgen på ting her :)
         ned_data = self.convert_GNSS_to_NED(msg)
-        self.x = ned_data[1]
-        self.y = ned_data[0]
-        self.z = ned_data[2]
+        self.north = ned_data[0]
+        self.east = ned_data[1]
+        self.down = ned_data[2]
         self.covX = 1
         self.covY = 1
         self.covZ = 9
 
-        self.position = [self.x, self.y, self.z]
+        self.position = [self.north, self.east, self.down]
         self.covariance = np.diag([self.covX, self.covY, self.covZ])
         self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5]))
 
