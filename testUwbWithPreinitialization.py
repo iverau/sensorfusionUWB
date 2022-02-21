@@ -214,10 +214,9 @@ class GtSAMTest:
                 gnss_counter = 0
 
 
-
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
-            break
+            
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
@@ -236,7 +235,7 @@ class GtSAMTest:
                 imu_measurements.append(measurement)
             
             iteration_number += 1
-            print("Iteration", iteration_number, len(self.pose_variables))
+            print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
 
 
@@ -246,6 +245,8 @@ class GtSAMTest:
                 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
+                positions, eulers = gtsam_pose_from_result(result)
+
                 
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
@@ -258,11 +259,12 @@ class GtSAMTest:
                 #print("Current pose", self.current_pose)
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
 
-            if len(self.pose_variables) > 900:
-                break
+                if len(self.pose_variables) > 30:
+                    break
 
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
+
 
 
         print("\n-- Plot pose")
