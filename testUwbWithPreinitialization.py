@@ -10,8 +10,8 @@ from scipy.spatial.transform import Rotation as R
 from Sensors.IMU import IMU
 
 import matplotlib.pyplot as plt
-from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias
 import seaborn as sns
 
 class GtSAMTest:
@@ -224,7 +224,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
-            break
+            
             
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
@@ -276,6 +276,7 @@ class GtSAMTest:
         positions, eulers = gtsam_pose_from_result(result)
         print("Postion length:", len(positions))
 
+        biases = gtsam_bias_from_results(result, self.imu_bias_variables)
 
         print("\n-- Plot pose")
         plt.figure(1)
@@ -284,7 +285,8 @@ class GtSAMTest:
         plot_position(positions, self.ground_truth, self.time_stamps)
         plt.figure(3)
         plot_angels(eulers, self.ground_truth, self.time_stamps)
-
+        plt.figure(4)
+        plot_bias(biases)
         plt.show()
 
 testing = GtSAMTest()

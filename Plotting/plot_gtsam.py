@@ -92,3 +92,15 @@ def plot_angels(euler_angels, ground_truth, time_steps):
     plt.tight_layout()
 
     
+
+def plot_bias(bias):
+    plt.suptitle("Biases")
+    plt.subplot(311)
+    plt.plot(range(len(bias)), bias[:, 0])
+    plt.ylabel("North bias")
+    plt.subplot(312)
+    plt.plot(range(len(bias)), bias[:, 1])
+    plt.ylabel("East bias")
+    plt.subplot(313)
+    plt.plot(range(len(bias)), bias[:, 2])
+    plt.ylabel("Down bias")

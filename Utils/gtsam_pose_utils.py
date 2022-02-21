@@ -39,3 +39,11 @@ def gtsam_pose_to_numpy(gtsam_pose):
         gtsam_pose.rotation().yaw()])
     return position, euler
 
+
+def gtsam_bias_from_results(gtsam_result, bias_keys):
+    poses = []
+    for key in bias_keys:
+        if gtsam_result.exists(key):
+            pose = gtsam_result.atConstantBias(key)
+            poses.append(pose.accelerometer())
+    return np.array(poses)
