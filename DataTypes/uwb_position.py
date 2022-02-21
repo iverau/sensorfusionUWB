@@ -32,12 +32,12 @@ class UWB_Position:
 
     def extract_coordinates(self, mat_file):
         self.id =   mat_file["beacon"][0][0][0][0][0]
-        self.x =    mat_file["beacon"][0][0][1][0][0]
-        self.y =    mat_file["beacon"][0][0][2][0][0]
-        self.z =    mat_file["beacon"][0][0][3][0][0]
+        self.north =    mat_file["beacon"][0][0][1][0][0]
+        self.east =    mat_file["beacon"][0][0][2][0][0]
+        self.down =    mat_file["beacon"][0][0][3][0][0]
 
     def position(self):
-        return [self.x, self.y, self.z]
+        return [self.north, self.east, self.down]
 
     def __repr__(self) -> str:
-        return f"UWB_Position[id = {self.id}, x = {self.x}, y = {self.y}, z = {self.z}]"
+        return f"UWB_Position[id = {self.id}, x = {self.north}, y = {self.east}, z = {self.down}]"
