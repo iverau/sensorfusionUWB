@@ -177,6 +177,7 @@ class GtSAMTest:
     def add_GNSS_to_graph(self, factor_graph, measurement):
         pose = gtsam.Pose3(self.current_pose.rotation(), measurement.position)
         factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, measurement.noise_model))
+        #print(gtsam.Pose3(self.current_pose.rotation(), measurement.position))
         return pose
 
 
@@ -192,7 +193,8 @@ class GtSAMTest:
                     self.time_stamps.append(measurement.time.to_time())
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
                     self.add_imu_factor_gnss(integrated_measurement, imu_measurements) 
-
+                    
+                    print("Measurement data", measurement.time.to_time(), measurement.position)
                     # Reset the IMU measurement list
                     imu_measurements = []
                     self.isam.update()

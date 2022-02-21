@@ -5,7 +5,8 @@ Todos:
 
 
 Mulige feilkilder:
-- Fikse posisjonsdata (med tanke på NED)
+- Fikse tidsdelay i input data kanskje?
+- Få inn bedre initial estiamte på heading
 
 Komboer:
 uwb-tri vs gps 

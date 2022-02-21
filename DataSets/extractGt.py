@@ -29,48 +29,49 @@ class GroundTruthEstimates:
 
 
     def initial_pose(self):
-        return np.array([self.roll[self.start_index], self.pitch[self.start_index], self.yaw[self.start_index], self.north[self.start_index], self.east[self.start_index], self.down[self.start_index]])
+        print("Initial pose:", self.north[0], self.east[0], self.down[0])
+        return np.array([self.roll[0], self.pitch[0], self.yaw[0], self.north[0], self.east[0], self.down[0]])
 
     def initial_velocity(self):
         # Initial velcoity is set to 0 as it moves close to a straight line
-        return np.array([self.v_north[self.start_index], self.v_east[self.start_index], self.v_down[self.start_index]])
+        return np.array([self.v_north[0], self.v_east[0], self.v_down[0]])
 
     def extract_data(self, pre_initialization=None):
         self.mat_file_to_dict()
         self.time = np.array(self.data_dictionary["tow"][0])
-        self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])
-        self.east = np.array(self.data_dictionary["p_lb_L_hat"][1])
-        self.down = np.array(self.data_dictionary["p_lb_L_hat"][2])
-        self.roll = np.array(self.data_dictionary["roll_hat"][0])
-        self.pitch = np.array(self.data_dictionary["pitch_hat"][0])
-        self.yaw = np.array(self.data_dictionary["yaw_hat"][0])
 
-
-        self.v_north = self.data_dictionary["v_eb_n_hat"][0]
-        self.v_east = self.data_dictionary["v_eb_n_hat"][1]
-        self.v_down = self.data_dictionary["v_eb_n_hat"][2]
-        
         # Compensate for time offset
         if pre_initialization:
-            self.time -= self.datasetSettings.gt_time_offset + 10
+            self.time_offset = self.datasetSettings.gt_time_offset - 10
         else:
-            self.time -= self.datasetSettings.gt_time_offset
+            self.time_offset = self.datasetSettings.gt_time_offset
 
         self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+        self.time = self.time[self.start_index:] - self.datasetSettings.gt_time_offset
+
+
+        self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[self.start_index:]
+        self.east = np.array(self.data_dictionary["p_lb_L_hat"][1])[self.start_index:]
+        self.down = np.array(self.data_dictionary["p_lb_L_hat"][2])[self.start_index:]
+        self.roll = np.array(self.data_dictionary["roll_hat"][0])[self.start_index:]
+        self.pitch = np.array(self.data_dictionary["pitch_hat"][0])[self.start_index:]
+        self.yaw = np.array(self.data_dictionary["yaw_hat"][0])[self.start_index:]
+
+        self.v_north = self.data_dictionary["v_eb_n_hat"][0][self.start_index:]
+        self.v_east = self.data_dictionary["v_eb_n_hat"][1][self.start_index:]
+        self.v_down = self.data_dictionary["v_eb_n_hat"][2][self.start_index:]
 
         self.gt_transelation = np.array(self.data_dictionary["p_lb_L_hat"]).astype("float")[:, self.start_index:]
-        self.gt_angels = np.zeros((len(self.time) - self.start_index, 3)).astype("float")
-        self.gt_angels[:, 0] = self.roll.copy()[self.start_index:]
-        self.gt_angels[:, 1] = self.pitch.copy()[self.start_index:]
-        self.gt_angels[:, 2] = self.yaw.copy()[self.start_index:]
-        self.time = self.time[self.start_index:]
+        self.gt_angels = np.zeros((len(self.time), 3)).astype("float")
+        self.gt_angels[:, 0] = self.roll.copy()
+        self.gt_angels[:, 1] = self.pitch.copy()
+        self.gt_angels[:, 2] = self.yaw.copy()
 
 
 
     def find_index_closest(self, time_array, start_time):
-        time_array -= time_array[0]
-        time_array += self.datasetSettings.gt_time_offset
-        return (np.abs(time_array - start_time)).argmin()
+        temp_array = time_array - (time_array[0] - self.time_offset)
+        return (np.abs(temp_array - start_time)).argmin()
 
     def mat_file_to_dict(self):
         keys = ["tow", "navigation_frame", "roll_hat", "pitch_hat", "yaw_hat", "omega_ib_b_hat", "ars_bias_hat", "ars_bias_total_hat", "acc_bias_hat", "gravity_hat", "tmo_innovation", "T_tmo_innovation", "T_tmo_innovation_sum", "p_lb_L_hat", "v_eb_n_hat", "speed_course_hat", "innov", "innov_covariance", "P_hat"]
