@@ -8,6 +8,7 @@ Mulige feilkilder:
 - Få inn bedre initial estiamte på heading
 - Sjekke mot GPS målinger hva som er ca posisjon når man går over på UWB
 - Sjekke initial conditions på navstate i add_imu_factor
+- Er det problematisk at imuen gir ut -9.81 hele tiden
 
 Komboer:
 uwb-tri vs gps 

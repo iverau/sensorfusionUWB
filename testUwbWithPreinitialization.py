@@ -14,8 +14,6 @@ from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_r
 from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias
 import seaborn as sns
 
-print(gtsam.__file__)
-
 class GtSAMTest:
 
 
@@ -84,7 +82,8 @@ class GtSAMTest:
         landmark = self.get_UWB_landmark(uwb_measurement)
         measurement_noise = gtsam.noiseModel.Isotropic.Sigma(1, uwb_measurement.std)
         self.factor_graph.add(gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
-        #print(landmark, uwb_measurement.id)
+        #self.calculateDistancesFromUWBAncors()
+        #print("Landmark measurement", uwb_measurement.id, uwb_measurement.range)
 
 
 
@@ -116,6 +115,8 @@ class GtSAMTest:
         for measurement in imu_measurements:
             summarized_measurement.integrateMeasurement(measurement.linear_vel, measurement.angular_vel, deltaT)
 
+        print("Linear vel from imu",measurement.linear_vel)
+
         return summarized_measurement
 
     def add_imu_factor(self, integrated_measurement, imu_measurements):
@@ -143,8 +144,10 @@ class GtSAMTest:
             )
         )
 
-        
+        #print("Pre integration",self.navstate)
         self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
+        #print("Post integration",self.navstate)
+
         #print("Navstate", self.navstate)
         #print("Current velocity", self.current_velocity)
         self.graph_values.insert(self.pose_variables[-1], self.navstate.pose())
@@ -184,6 +187,14 @@ class GtSAMTest:
         return pose
 
 
+    def calculateDistancesFromUWBAncors(self):
+        for key, uwb_position in self.uwb_positions.UWB_position_map.items():
+            delta = np.linalg.norm(uwb_position.position() - self.current_pose.translation())
+            print(f"Distance from {key} is {delta} meters.")
+            print("Pose of vessel:", self.current_pose.translation())
+            print("Pose of anchor:", uwb_position.position(), "\n")
+
+
     def run(self):
         # Dummy variable for storing imu measurements
         imu_measurements = []
@@ -219,9 +230,11 @@ class GtSAMTest:
                 self.current_pose = result.atPose3(self.pose_variables[-1])
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
+                print("Gnss vel",self.current_velocity)
                 gnss_counter = 0
 
         print("time start", self.time_stamps[-1])
+        print("Vel at start:", self.current_velocity)
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
@@ -259,20 +272,22 @@ class GtSAMTest:
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
                 
+                #self.calculateDistancesFromUWBAncors()
                 
                 self.current_pose = result.atPose3(self.pose_variables[-1]) 
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
-
+                print("Current vel", self.current_velocity)
                 #print("Current pose", self.current_pose)
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
-                if len(self.pose_variables) > 50:
+                if len(self.pose_variables) > 300:
                     break
 
 
         self.isam.update(self.factor_graph, self.graph_values)
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
+        
 
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
 
