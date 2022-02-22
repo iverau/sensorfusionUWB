@@ -186,7 +186,6 @@ class GtSAMTest:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
 
-                #print("Current pose", self.current_pose)
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
 
 

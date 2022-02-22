@@ -12,8 +12,9 @@ def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, gr
         y_list.append(p[0])
 
     plt.scatter(x_list, y_list)
-    plt.plot(ground_truth.gt_transelation[1], ground_truth.gt_transelation[0], color="red")
     plt.plot(position_estimates[:, 1], position_estimates[:, 0], color="blue")
+    plt.plot(ground_truth.gt_transelation[1], ground_truth.gt_transelation[0], color="red")
+
     plt.xlabel("East [m]")
     plt.ylabel("North [m]")
     plt.legend(["Ground truth", "Estimates", "UWB beacons"])
