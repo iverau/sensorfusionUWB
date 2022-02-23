@@ -10,8 +10,8 @@ from scipy.spatial.transform import Rotation as R
 from Sensors.IMU import IMU
 
 import matplotlib.pyplot as plt
-from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
 import seaborn as sns
 
 class GtSAMTest:
@@ -55,22 +55,24 @@ class GtSAMTest:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
-        prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 0.01)
-        prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-05, 5e-05, 5e-05, 5e-05, 5e-05, 5e-05]))
+        #prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
+        self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([1, 1, 1e-10, 1e-5, 1e-5, 1e-2]))
+        self.prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 0.1)
+        self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-12, 5e-12, 5e-12, 5e-5, 5e-5, 5e-5]))
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
+        T_init[2] = -0.7
 
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
 
 
         self.current_velocity = self.ground_truth.initial_velocity()
-        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
+        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.array([-15e-3, -5e-3, -7e-3])) 
         self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
 
-        self.factor_graph.add(gtsam.PriorFactorPose3(X1, self.current_pose, prior_noise_x))
-        self.factor_graph.add(gtsam.PriorFactorVector(V1, self.current_velocity, prior_noise_v))
-        self.factor_graph.add(gtsam.PriorFactorConstantBias(B1, self.current_bias, prior_noise_b))
+        self.factor_graph.add(gtsam.PriorFactorPose3(X1, self.current_pose, self.prior_noise_x))
+        self.factor_graph.add(gtsam.PriorFactorVector(V1, self.current_velocity, self.prior_noise_v))
+        self.factor_graph.add(gtsam.PriorFactorConstantBias(B1, self.current_bias, self.prior_noise_b))
 
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
@@ -105,8 +107,7 @@ class GtSAMTest:
         self.uwb_counter = set()
 
     def pre_integrate_imu_measurement(self, imu_measurements):
-        currentBias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,)))
-        summarized_measurement = gtsam.PreintegratedImuMeasurements(self.imu_params.preintegration_param, currentBias)
+        summarized_measurement = gtsam.PreintegratedImuMeasurements(self.imu_params.preintegration_param, self.current_bias)
 
         deltaT = 1 / self.dataset.dataset_settings.imu_frequency
 
@@ -136,7 +137,7 @@ class GtSAMTest:
             gtsam.BetweenFactorConstantBias(
                 self.imu_bias_variables[-2],
                 self.imu_bias_variables[-1],
-                gtsam.imuBias.ConstantBias(np.zeros((3, 1)), np.zeros((3, 1))),
+                self.current_bias,
                 gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements)) * self.imu_params.sigmaBetweenBias)
             )
         )
@@ -147,8 +148,8 @@ class GtSAMTest:
         self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
         self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 1)))
-        self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))), gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-05, 5e-05, 5e-05, 5e-05, 5e-05, 5e-05]))))
+        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, self.prior_noise_v))
+        self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(len(imu_measurements)*imu_measurements[0].variance_vector())))
 
     def add_imu_factor_gnss(self, integrated_measurement, imu_measurements):
@@ -172,7 +173,7 @@ class GtSAMTest:
             gtsam.BetweenFactorConstantBias(
                 self.imu_bias_variables[-2],
                 self.imu_bias_variables[-1],
-                gtsam.imuBias.ConstantBias(np.zeros((3, 1)), np.zeros((3, 1))),
+                self.current_bias,
                 gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements)) * self.imu_params.sigmaBetweenBias)
             )
         )
@@ -214,8 +215,8 @@ class GtSAMTest:
                 self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
                 self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-                self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 1)))
-                self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))), gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-05, 5e-05, 5e-05, 5e-05, 5e-05, 5e-05]))))
+                self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 2)))
+                self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         
 
 
@@ -236,6 +237,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
+            break
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
@@ -276,6 +278,8 @@ class GtSAMTest:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
+                if len(self.pose_variables) > 500:
+                    break
 
 
         self.isam.update(self.factor_graph, self.graph_values)
@@ -294,6 +298,8 @@ class GtSAMTest:
         plot_angels(eulers, self.ground_truth, self.time_stamps)
         plt.figure(4)
         plot_bias(biases)
+        plt.figure(5)
+        plot_vel(gtsam_velocity_from_results(result, self.velocity_variables))
         plt.show()
 
 

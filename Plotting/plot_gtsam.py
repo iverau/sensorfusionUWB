@@ -106,3 +106,15 @@ def plot_bias(bias):
     plt.subplot(313)
     plt.plot(range(len(bias)), bias[:, 2])
     plt.ylabel("Down bias")
+
+def plot_vel(velocities):
+    plt.suptitle("Velocities")
+    plt.subplot(311)
+    plt.plot(range(len(velocities)), velocities[:, 0])
+    plt.ylabel("North velocity")
+    plt.subplot(312)
+    plt.plot(range(len(velocities)), velocities[:, 1])
+    plt.ylabel("East velocity")
+    plt.subplot(313)
+    plt.plot(range(len(velocities)), velocities[:, 2])
+    plt.ylabel("Down velocity")

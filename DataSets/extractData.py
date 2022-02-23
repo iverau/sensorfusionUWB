@@ -14,9 +14,11 @@ class ROSData:
         # Initializes the dataset settings
         self.dataset_settings = ROSData.select_dataset(dataset_number)
 
+        self.initialization_step_time = 0
+
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
+        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
 
@@ -53,7 +55,7 @@ class ROSData:
 
     def generate_initialization_gnss_imu(self):
         start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
-        end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
+        end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
         topics = ["/sentiboard/adis", "/ublox1/fix"]
         for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
             yield generate_measurement(topic, msg, t)
