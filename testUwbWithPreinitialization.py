@@ -215,7 +215,8 @@ class GtSAMTest:
                 self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
                 self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-                self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 2)))
+                # TODO: Hvorfor er denne så viktig å ha lav
+                self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 0.001)))
                 self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         
 
@@ -237,7 +238,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
-            break
+            
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
