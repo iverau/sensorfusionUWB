@@ -107,14 +107,19 @@ def plot_bias(bias):
     plt.plot(range(len(bias)), bias[:, 2])
     plt.ylabel("Down bias")
 
-def plot_vel(velocities):
+def plot_vel(velocities, time_steps, ground_truth):
     plt.suptitle("Velocities")
     plt.subplot(311)
-    plt.plot(range(len(velocities)), velocities[:, 0])
+    plt.plot(time_steps, velocities[:, 0])
+    plt.plot(ground_truth.time  , ground_truth.v_north)
     plt.ylabel("North velocity")
     plt.subplot(312)
-    plt.plot(range(len(velocities)), velocities[:, 1])
+    plt.plot(time_steps, velocities[:, 1])
+    plt.plot(ground_truth.time  , ground_truth.v_east)
+
     plt.ylabel("East velocity")
     plt.subplot(313)
-    plt.plot(range(len(velocities)), velocities[:, 2])
+    plt.plot(time_steps, velocities[:, 2])
+    plt.plot(ground_truth.time  , ground_truth.v_down)
+
     plt.ylabel("Down velocity")
