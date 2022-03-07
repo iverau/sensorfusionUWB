@@ -144,7 +144,7 @@ class GtSAMTest:
         )
 
         self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
-        velocityNED = self.current_pose.rotation().matrix() @ self.navstate.velocity()
+        velocityNED = self.navstate.pose().rotation().matrix() @ self.navstate.velocity()
         velocityNED[2] = 0
 
         self.graph_values.insert(self.pose_variables[-1], self.navstate.pose())
@@ -153,7 +153,7 @@ class GtSAMTest:
 
         self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], velocityNED, gtsam.noiseModel.Diagonal.Sigmas(VELOCITY_SIGMAS)))
         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
-        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(len(imu_measurements)*imu_measurements[0].variance_vector())))
+        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*imu_measurements[0].variance_vector())))
 
     def add_imu_factor_gnss(self, integrated_measurement, imu_measurements):
         # Create new state variables
@@ -271,7 +271,7 @@ class GtSAMTest:
 
 
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 2:
+            if len(self.uwb_counter) == 1:
                 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
@@ -286,7 +286,7 @@ class GtSAMTest:
                 self.current_pose = result.atPose3(self.pose_variables[-1]) 
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
-                self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.navstate.velocity())
+                self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
                 if len(self.pose_variables) > 800:
                     break
 
