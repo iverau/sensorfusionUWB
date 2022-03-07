@@ -58,7 +58,7 @@ class GtSAMTest:
         #prior_noise_x = gtsam.noiseModel.Isotropic.Precisions([0.0, 0.0, 0.0, 1e-5, 1e-5, 1e-5])
         self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10]))
         #self.prior_noise_v = gtsam.noiseModel.Isotropic.Sigma(3, 0.001)
-        self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.1, 0.1, 0.01]))
+        self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.001, 0.001, 0.01]))
         self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-12, 5e-12, 5e-12, 5e-5, 5e-5, 5e-5]))
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
@@ -149,7 +149,7 @@ class GtSAMTest:
         self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
         self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Diagonal.Sigmas(np.array([0.001, 0.001, 0.001]))))
+        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.navstate.velocity(), gtsam.noiseModel.Diagonal.Sigmas(np.array([0.001, 0.001, 0.001]))))
         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(len(imu_measurements)*imu_measurements[0].variance_vector())))
 
