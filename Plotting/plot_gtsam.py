@@ -71,14 +71,14 @@ def plot_angels(euler_angels, ground_truth, time_steps):
 
     plt.suptitle("Angels")
     plt.subplot(311)
-    plt.plot(time_steps, r2d * euler_angels[:, 1])
+    plt.plot(time_steps, r2d * euler_angels[:, 0])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 0])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Roll [deg]")
 
     plt.subplot(312)
-    plt.plot(time_steps, r2d * euler_angels[:, 0])
+    plt.plot(time_steps, r2d * euler_angels[:, 1])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 1])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
