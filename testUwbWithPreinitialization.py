@@ -297,7 +297,7 @@ class GtSAMTest:
 
         print("\n-- Plot pose")
         #plt.figure(1)
-        #plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()), self.ground_truth)
+        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(result, self.landmarks_variables.values()), self.ground_truth)
         plt.figure(2)
         plot_position(positions, self.ground_truth, self.time_stamps)
         plt.figure(3)
