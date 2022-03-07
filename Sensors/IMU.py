@@ -17,7 +17,7 @@ class IMU:
         AccSigma        = 0.1
         GyroSigma       = 0.0175
         IntSigma        = 0.000167  # integtation sigma
-        AccBiasSigma    = 2.91e-006
+        AccBiasSigma    = 2.91e-6
         GyroBiasSigma   = 0.0100395199348279
         self.preintegration_param = gtsam.PreintegrationParams(np.array([0, 0, 9.82175]))
         self.preintegration_param .setAccelerometerCovariance(AccSigma ** 2 * np.eye(3))

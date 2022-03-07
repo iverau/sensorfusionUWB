@@ -96,7 +96,7 @@ class GtSAMTest:
 
             # Creates an initial estimate of the landmark pose
             self.graph_values.insert(self.landmarks_variables[uwb_measurement.id], position)
-            self.factor_graph.add(gtsam.PriorFactorVector(self.landmarks_variables[uwb_measurement.id], position, gtsam.noiseModel.Isotropic.Sigma(3, 0.0001)))
+            self.factor_graph.add(gtsam.PriorFactorVector(self.landmarks_variables[uwb_measurement.id], position, gtsam.noiseModel.Isotropic.Sigma(3, 1e-32)))
 
 
         return self.landmarks_variables[uwb_measurement.id]
@@ -225,7 +225,7 @@ class GtSAMTest:
 
 
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 3:
+            if len(self.uwb_counter) == 2:
                 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
@@ -241,7 +241,7 @@ class GtSAMTest:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
-                if len(self.pose_variables) > 2500:
+                if len(self.pose_variables) > 1000:
                     break
 
 
