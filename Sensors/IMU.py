@@ -15,7 +15,7 @@ class IMU:
     def setup_imu_params(self):
         """Setup IMU preintegration and bias parameters"""
         AccSigma        = 0.1
-        GyroSigma       = 0.00175
+        GyroSigma       = 0.0175
         IntSigma        = 0.000167  # integtation sigma
         AccBiasSigma    = 2.91e-006
         GyroBiasSigma   = 0.0100395199348279

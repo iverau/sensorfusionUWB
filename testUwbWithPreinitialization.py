@@ -24,7 +24,7 @@ class GtSAMTest:
         isam_params.setRelinearizeSkip(10)
         self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
-        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=True)
+        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=False)
         self.imu_params: IMU = IMU()
 
 
@@ -149,7 +149,7 @@ class GtSAMTest:
         self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
         self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Isotropic.Sigma(3, 0.001)))
+        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Diagonal.Sigmas(np.array([0.001, 0.001, 0.001]))))
         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(len(imu_measurements)*imu_measurements[0].variance_vector())))
 
@@ -198,50 +198,7 @@ class GtSAMTest:
         # Dummy variable for storing imu measurements
         imu_measurements = []
         iteration_number = 0
-        gnss_counter = 0
-        # 10 secs of GNSS
-        for measurement in self.dataset.generate_initialization_gnss_imu():
-            if measurement.measurement_type.value == "GNSS":
-                if imu_measurements:
-                    self.time_stamps.append(measurement.time.to_time())
-                    integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
-                    self.add_imu_factor_gnss(integrated_measurement, imu_measurements) 
-                    
-                    # Reset the IMU measurement list
-                    imu_measurements = []
-                    self.isam.update()
 
-                    # TODO: Hvorfor er denne så viktig å ha lav
-                    self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_velocity, gtsam.noiseModel.Diagonal.Sigmas(np.array([0.01, 0.01, 0.001]))))
-                    self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
-
-                gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
-                gnss_counter += 1
-                self.graph_values.insert(self.pose_variables[-1], gnss_pose)
-                self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
-                self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
-
-
-        
-
-
-
-            elif measurement.measurement_type.value == "IMU":
-                imu_measurements.append(measurement)
-
-            if gnss_counter == 2:
-                self.isam.update(self.factor_graph, self.graph_values)
-                result = self.isam.calculateEstimate()
-
-                self.reset_pose_graph_variables()
-                self.current_pose = result.atPose3(self.pose_variables[-1])
-                self.current_velocity = result.atVector(self.velocity_variables[-1])
-                self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
-                gnss_counter = 0
-
-
-        imu_measurements = []
-        self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
         for measurement in self.dataset.generate_measurements():
             
             if measurement.measurement_type.value == "UWB":
@@ -284,7 +241,7 @@ class GtSAMTest:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
-                if len(self.pose_variables) > 500:
+                if len(self.pose_variables) > 2500:
                     break
 
 
