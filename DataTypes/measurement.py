@@ -83,8 +83,8 @@ class IMU_Measurement(Measurement):
         self.angular_vel_covariance = np.diag([msg.angular_velocity_covariance[4], msg.angular_velocity_covariance[0], msg.angular_velocity_covariance[8]])
         self.linear_vel = np.array([msg.linear_acceleration.y, msg.linear_acceleration.x, -msg.linear_acceleration.z])
         self.linear_vel_covariance = np.diag([msg.linear_acceleration_covariance[4], msg.linear_acceleration_covariance[0], msg.linear_acceleration_covariance[8]])
-        self.linear_vel_covariance = np.diag([0.01 for i in range(3)])
-        self.angular_vel_covariance = np.diag([0.0000175 for i in range(3)])
+        self.linear_vel_covariance = np.diag([0.1, 0.1, 0.001])
+        self.angular_vel_covariance = np.diag([0.00175, 0.00175, 0.001])
 
 
     def variance_vector(self):

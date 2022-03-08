@@ -201,7 +201,7 @@ class GtSAMTest:
         imu_measurements = []
         iteration_number = 0
 
-        """
+        
         gnss_counter = 0
         # 10 secs of GNSS
         for measurement in self.dataset.generate_initialization_gnss_imu():
@@ -226,10 +226,6 @@ class GtSAMTest:
                 self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
 
-        
-
-
-
             elif measurement.measurement_type.value == "IMU":
                 imu_measurements.append(measurement)
 
@@ -242,7 +238,7 @@ class GtSAMTest:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                 gnss_counter = 0
-        """
+        
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
@@ -271,13 +267,13 @@ class GtSAMTest:
 
 
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 1:
+            if len(self.uwb_counter) == 3:
                 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
                 positions, eulers = gtsam_pose_from_result(result)
 
-                print(self.factor_graph)
+                #print(self.factor_graph)
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
                 
@@ -285,6 +281,7 @@ class GtSAMTest:
                 
                 self.current_pose = result.atPose3(self.pose_variables[-1]) 
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
+                self.current_velocity[2] = 0
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
                 if len(self.pose_variables) > 800:
