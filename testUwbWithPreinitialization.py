@@ -22,8 +22,8 @@ class GtSAMTest:
     def __init__(self) -> None:
         self.dataset: ROSData = ROSData(DATASET_NUMBER)
         isam_params: gtsam.ISAM2Params = gtsam.ISAM2Params()
-        isam_params.setFactorization("Cholesky")
-        isam_params.setRelinearizeSkip(10)
+        isam_params.setFactorization("QR")
+        isam_params.setRelinearizeSkip(1)
         self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
         self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=True)
@@ -151,7 +151,7 @@ class GtSAMTest:
         self.graph_values.insert(self.velocity_variables[-1], velocityNED)
         self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], velocityNED, gtsam.noiseModel.Diagonal.Sigmas(VELOCITY_SIGMAS)))
+        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], velocityNED, gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*VELOCITY_SIGMAS)))
         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(), gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*imu_measurements[0].variance_vector())))
 
@@ -277,7 +277,7 @@ class GtSAMTest:
                 result = self.isam.calculateEstimate()
                 positions, eulers = gtsam_pose_from_result(result)
 
-                
+                print(self.factor_graph)
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
                 
