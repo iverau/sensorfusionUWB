@@ -45,5 +45,14 @@ def gtsam_bias_from_results(gtsam_result, bias_keys):
     for key in bias_keys:
         if gtsam_result.exists(key):
             pose = gtsam_result.atConstantBias(key)
-            poses.append(pose.accelerometer())
+            poses.append(pose.gyroscope())
     return np.array(poses)
+
+
+def gtsam_velocity_from_results(gtsam_results, vel_key):
+    vels = []
+    for key in vel_key:
+        if gtsam_results.exists(key):
+            vel = gtsam_results.atVector(key)
+            vels.append(vel)
+    return np.array(vels)

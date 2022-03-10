@@ -89,8 +89,8 @@ class GtSAMTest:
             self.landmarks_variables[uwb_measurement.id] = L(len(self.landmarks_variables.keys()))
 
             # Creates an initial estimate of the landmark pose
-            self.graph_values.insert(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z))
-            self.factor_graph.add(gtsam.PriorFactorVector(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].x, self.uwb_positions[uwb_measurement.id].y, self.uwb_positions[uwb_measurement.id].z), gtsam.noiseModel.Isotropic.Sigma(3, 0.0001)))
+            self.graph_values.insert(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].north, self.uwb_positions[uwb_measurement.id].east, self.uwb_positions[uwb_measurement.id].down))
+            self.factor_graph.add(gtsam.PriorFactorVector(self.landmarks_variables[uwb_measurement.id], gtsam.Point3(self.uwb_positions[uwb_measurement.id].north, self.uwb_positions[uwb_measurement.id].east, self.uwb_positions[uwb_measurement.id].down), gtsam.noiseModel.Isotropic.Sigma(3, 0.0001)))
 
 
         return self.landmarks_variables[uwb_measurement.id]
@@ -187,7 +187,8 @@ class GtSAMTest:
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
 
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_velocity)
-
+                if len(self.pose_variables) > 500:
+                    break
 
 
         result = self.isam.calculateBestEstimate()

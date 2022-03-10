@@ -71,14 +71,14 @@ def plot_angels(euler_angels, ground_truth, time_steps):
 
     plt.suptitle("Angels")
     plt.subplot(311)
-    plt.plot(time_steps, r2d * euler_angels[:, 1])
+    plt.plot(time_steps, r2d * euler_angels[:, 0])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 0])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Roll [deg]")
 
     plt.subplot(312)
-    plt.plot(time_steps, r2d * euler_angels[:, 0])
+    plt.plot(time_steps, r2d * euler_angels[:, 1])
     plt.plot(ground_truth.time  , r2d * ground_truth.gt_angels[:, 1])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
@@ -106,3 +106,20 @@ def plot_bias(bias):
     plt.subplot(313)
     plt.plot(range(len(bias)), bias[:, 2])
     plt.ylabel("Down bias")
+
+def plot_vel(velocities, time_steps, ground_truth):
+    plt.suptitle("Velocities")
+    plt.subplot(311)
+    plt.plot(time_steps, velocities[:, 0])
+    plt.plot(ground_truth.time  , ground_truth.v_north)
+    plt.ylabel("North velocity")
+    plt.subplot(312)
+    plt.plot(time_steps, velocities[:, 1])
+    plt.plot(ground_truth.time  , ground_truth.v_east)
+
+    plt.ylabel("East velocity")
+    plt.subplot(313)
+    plt.plot(time_steps, velocities[:, 2])
+    plt.plot(ground_truth.time  , ground_truth.v_down)
+
+    plt.ylabel("Down velocity")
