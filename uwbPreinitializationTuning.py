@@ -15,7 +15,7 @@ UWB_PRIOR_POSITIONING_NOISE = 1e-32
 
 # UWB-stage IMU tuning
 VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01]) # It is scalled with number of measurements
-POSE_SIGMAS = np.array([0.00175, 0.00175, 0.001, 0.1, 0.1, 0.001]) # It is scalled with number of measurements
+POSE_SIGMAS = np.array([0.00175, 0.00175, 0.01, 1, 1, 0.001]) # It is scalled with number of measurements
 # pre-integration parameters can be found in the file Sensors/Imu.py
 
 #GNSS tuning
@@ -24,4 +24,4 @@ GNSS_NOISE = np.array([0.8, 0.8, 0.5, 2, 2, 5])
 GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
 
 #Other constants
-NUMBER_OF_RUNNING_ITERATIONS = 500 # Full traj is about 3000
+NUMBER_OF_RUNNING_ITERATIONS = 1500 # Full traj is about 3000
