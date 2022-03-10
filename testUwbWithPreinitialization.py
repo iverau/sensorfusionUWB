@@ -185,7 +185,9 @@ class GtSAMTest:
         self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
 
     def add_GNSS_to_graph(self, factor_graph, measurement):
-        pose = gtsam.Pose3(self.current_pose.rotation(), measurement.position - self.current_pose.rotation().matrix() @ self.gnss_params.T_in_body()) 
+        position = measurement.position - self.current_pose.rotation().matrix() @ self.gnss_params.T_in_body()
+        position[2] = 0
+        pose = gtsam.Pose3(self.navstate.pose().rotation(), position) 
         factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
         return pose
 
@@ -244,7 +246,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
-            break
+            
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
