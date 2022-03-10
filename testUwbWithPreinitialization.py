@@ -184,7 +184,7 @@ class GtSAMTest:
 
     def add_GNSS_to_graph(self, factor_graph, measurement):
         pose = gtsam.Pose3(self.current_pose.rotation(), measurement.position)
-        factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Precisions(GNSS_NOISE)))
+        factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
         return pose
 
 
@@ -242,7 +242,7 @@ class GtSAMTest:
 
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
-            
+            break
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
@@ -302,8 +302,8 @@ class GtSAMTest:
         plot_position(positions, self.ground_truth, self.time_stamps)
         plt.figure(3)
         plot_angels(eulers, self.ground_truth, self.time_stamps)
-        #plt.figure(4)
-        #plot_bias(biases)
+        plt.figure(4)
+        plot_bias(biases)
         plt.figure(5)
         plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
         plt.show()
