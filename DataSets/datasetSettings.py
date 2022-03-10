@@ -4,8 +4,8 @@ class SensorConfigurations:
     UWB_IMU = ["/sentiboard/adis", "/uwb_beacons_parsed"]
     UWB_LIDAR_IMU = ["/os1_cloud_node/imu", "/uwb_beacons_parsed"]
     UWB = ["/uwb_beacons_parsed"]
-    IMU_GNSS = ["/os1_cloud_node/imu", "/ublox1/fix"]
-    GNSS = ["/ublox1/fix"]
+    IMU_GNSS = ["/os1_cloud_node/imu", "/ublox2/fix"]
+    GNSS = ["/ublox2/fix"]
     IMU_TRI = ["/sentiboard/adis"]
     IMU_LIDAR_TRI = ["/os1_cloud_node/imu"]
 

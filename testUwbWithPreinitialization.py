@@ -8,6 +8,7 @@ from DataTypes.uwb_position import UWB_Ancors_Descriptor
 
 from scipy.spatial.transform import Rotation as R
 from Sensors.IMU import IMU
+from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
@@ -28,6 +29,7 @@ class GtSAMTest:
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
         self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=True)
         self.imu_params: IMU = IMU()
+        self.gnss_params: GNSS = GNSS()
 
 
         # Tracked variables for IMU and UWB
@@ -183,7 +185,7 @@ class GtSAMTest:
         self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
 
     def add_GNSS_to_graph(self, factor_graph, measurement):
-        pose = gtsam.Pose3(self.current_pose.rotation(), measurement.position)
+        pose = gtsam.Pose3(self.current_pose.rotation(), measurement.position - self.current_pose.rotation().matrix() @ self.gnss_params.T_in_body()) 
         factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
         return pose
 

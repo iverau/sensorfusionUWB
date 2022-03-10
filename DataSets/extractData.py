@@ -24,7 +24,7 @@ class ROSData:
 
 
     def extract_initial_pose(self):
-        for _, msg, t in self.bag.read_messages(topics=["/ublox1/fix"], start_time=self.bag_start_time):
+        for _, msg, t in self.bag.read_messages(topics=["/ublox2/fix"], start_time=self.bag_start_time):
             data = msg
             time = t
             break
