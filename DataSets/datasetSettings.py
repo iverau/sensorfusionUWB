@@ -8,12 +8,13 @@ class SensorConfigurations:
     GNSS = ["/ublox2/fix"]
     IMU_TRI = ["/sentiboard/adis"]
     IMU_LIDAR_TRI = ["/os1_cloud_node/imu"]
+    CAMERA_IMU_UWB = ["/camera/image_raw/compressed", "/sentiboard/adis", "/uwb_beacons_parsed"]
 
 
 class DatasetSettingsBase:
     #bag_start_time_offset = 0
     bag_duration = 100
-    enabled_topics = SensorConfigurations.UWB_IMU
+    enabled_topics = SensorConfigurations.CAMERA_IMU_UWB
     _filename = None
 
     def __init__(self, dataset_number: int):
