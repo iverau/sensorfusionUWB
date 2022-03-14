@@ -10,6 +10,7 @@ class PinholeCamera:
         self.K = np.array([[1995.4, 0, 965.5],
                            [0, 1995.2, 605.6],
                            [0, 0, 1]])
+        self.Kinv = np.linalg.norm(self.K)
         self.dist = np.array([-0.14964, 0.13337, 0.0, 0.0, 0.0])
 
     def undistort_image(self, img):
@@ -21,3 +22,18 @@ class PinholeCamera:
     def undistort_points(self, uv):
         uvs_undistorted = cv2.undistortPoints(uv, self.K, self.D, None, self.K)
         return uvs_undistorted.ravel().reshape(uvs_undistorted.shape[0], 2)
+
+    def normalize_image_coordinates(self, uv):
+        """Normalize image pixel coordinates using camera intrinsics
+        and homogenous coordinates
+        Args:
+            uvs : [Nx2]
+        Returns:
+            xcs: [Nx3] of normalized pixel coordinates
+        """
+        return np.dot(self.Kinv, add_ones(uv).T).T[:, 0:2]
+
+
+def add_ones(x):
+    """Add ones to work in homogenous coordinates"""
+    return np.concatenate([x, np.ones((x.shape[0], 1))], axis=1)
