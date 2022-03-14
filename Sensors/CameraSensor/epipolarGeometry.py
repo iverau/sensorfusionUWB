@@ -7,7 +7,7 @@ RANSAC_THRESHOLD =  0.0003
 class EpipolarGeometry:
 
     def __init__(self, cam) -> None:
-        self.camera = cam
+        self.cam = cam
 
     def undistort_and_normalize_image_coordinates(self, points):
         """Undistort and normalize image coordinates"""

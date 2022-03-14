@@ -20,7 +20,7 @@ class PinholeCamera:
         return undistorted_image[y:y+h, x:x+w]
         
     def undistort_points(self, uv):
-        uvs_undistorted = cv2.undistortPoints(uv, self.K, self.D, None, self.K)
+        uvs_undistorted = cv2.undistortPoints(uv, self.K, self.dist, None, self.K)
         return uvs_undistorted.ravel().reshape(uvs_undistorted.shape[0], 2)
 
     def normalize_image_coordinates(self, uv):

@@ -1,4 +1,4 @@
-from .featureDetector import FeatureDetector
+from Sensors.CameraSensor.featureDetector import *
 import cv2
 import numpy as np
 from enum import Enum

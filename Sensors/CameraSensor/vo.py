@@ -38,9 +38,9 @@ class VisualOdometry:
         self.pose_initialized = False
         self.state = VOState.NO_IMAGES_YET
 
-    def track(self, image, ground_truth):
+    def track(self, image):
         self.img_cur = image
-        self.gt = ground_truth
+        #self.gt = ground_truth
 
         if self.state == VOState.NO_IMAGES_YET:
             self.process_first_image()

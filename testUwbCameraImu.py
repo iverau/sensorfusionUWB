@@ -2,13 +2,18 @@ import gtsam
 from DataSets.extractData import ROSData
 from DataSets.extractGt import GroundTruthEstimates
 from DataTypes.uwb_position import UWB_Ancors_Descriptor
+from Sensors.CameraSensor.featureDetector import feature_detector_factory
 from Sensors.IMU import IMU
 from Sensors.GNSS import GNSS
 from settings import DATASET_NUMBER
 from gtsam.symbol_shorthand import X, L, V, B
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-
+from Sensors.CameraSensor.camera import PinholeCamera
+from Sensors.CameraSensor.epipolarGeometry import EpipolarGeometry
+from Sensors.CameraSensor.featureDetector import *
+from Sensors.CameraSensor.featureMatcher import *
+from Sensors.CameraSensor.vo import VisualOdometry
 
 class CameraUwbImuFusion:
 
@@ -36,6 +41,14 @@ class CameraUwbImuFusion:
         self.factor_graph: gtsam.NonlinearFactorGraph  = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
         #sns.set()
+
+        # Visual odometry part
+        camera = PinholeCamera()
+        geometry = EpipolarGeometry(camera)
+        feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
+        feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
+
+        self.visual_odometry = VisualOdometry(feature_detector, feature_matcher, geometry)
 
     def initialize_graph(self):
 
@@ -78,7 +91,7 @@ class CameraUwbImuFusion:
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value == "Camera":
-                print("Camera ")
+                self.visual_odometry.track(measurement.image)
 
 
 fusion = CameraUwbImuFusion()

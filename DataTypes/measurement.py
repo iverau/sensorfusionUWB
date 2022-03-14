@@ -2,6 +2,7 @@ from enum import Enum
 import numpy as np
 import gtsam
 import pymap3d as pm
+from PIL import ImageFile
 
 
 UWB_OFFSET = 0.85
@@ -102,9 +103,16 @@ class Camera_Measurement(Measurement):
         super().__init__(topic, t)
         self.extract_measurement(msg)
 
+    def _img_from_CompressedImage(self, msg):
+        """Convert compressed camera image to numpy array"""
+        parser = ImageFile.Parser()
+        parser.feed(msg.data)
+        res = parser.close()
+        return np.array(res)
+
     def extract_measurement(self, msg):
         self.format = msg.format
-        self.image = msg.data
+        self.image = self._img_from_CompressedImage(msg)
 
 class UWB_Trilateration_Measurement(Measurement):
 
