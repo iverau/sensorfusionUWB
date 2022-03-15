@@ -126,13 +126,13 @@ class VisualOdometry:
             self.kps_ref, self.des_ref = self.kps_cur_matched, self.kps_ref_matched
 
     def calculate_pose(self):
-        assert self.gt.scale > SCALE_THRESHOLD, "Absolute scale not > 0.1"
+        assert 1 > SCALE_THRESHOLD, "Absolute scale not > 0.1"
         # compose absolute motion [Rwa,twa] with estimated relative motion [Rab,s*tab]
         # (s is the scale extracted from the ground truth)
         # [Rwb,twb] = [Rwa,twa]*[Rab,tab] = [Rwa*Rab|twa + Rwa*tab]
 
         # Predict pose
-        self.cur_t = self.cur_t + self.gt.scale * self.cur_R.dot(self.t)
+        self.cur_t = self.cur_t + 1 * self.cur_R.dot(self.t)
         self.cur_R = self.cur_R.dot(self.R)
 
         # Calculate start translation

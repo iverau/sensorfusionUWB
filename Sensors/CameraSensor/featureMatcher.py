@@ -129,8 +129,8 @@ class FeatureMatcher:
         for pt1, pt2 in zip(pts_ref, pts_cur):
             a1, b1 = pt1.ravel()
             a2, b2 = pt2.ravel()
-            cv2.line(image_ref, (a1, b1), (a2, b2), match_color, 1)
-            cv2.circle(image_ref, (a1, b1), feat_size, feat_color, -1)
+            cv2.line(image_ref, (int(a1), int(b1)), (int(a2), int(b2)), match_color, 1)
+            cv2.circle(image_ref, (int(a1), int(b1)), feat_size, feat_color, -1)
 
         return image_ref
 
