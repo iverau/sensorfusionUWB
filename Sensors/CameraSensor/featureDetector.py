@@ -15,7 +15,7 @@ ORB_NUM_LEVELS = 3
 #Shi-thomasi detector
 QUALITY_LEVEL = 0.01
 MIN_CORNER_DIST = 3
-BLOCK_SIZE = 5
+BLOCK_SIZE = 3
 
 
 class FeatureDetectorType(Enum):

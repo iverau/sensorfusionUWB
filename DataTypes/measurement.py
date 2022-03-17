@@ -113,6 +113,7 @@ class Camera_Measurement(Measurement):
     def extract_measurement(self, msg):
         self.format = msg.format
         self.image = self._img_from_CompressedImage(msg)
+        self.image = self.image[:, :, ::-1]
 
 class UWB_Trilateration_Measurement(Measurement):
 

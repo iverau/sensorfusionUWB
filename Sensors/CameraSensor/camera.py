@@ -10,7 +10,7 @@ class PinholeCamera:
         self.K = np.array([[1995.4, 0, 965.5],
                            [0, 1995.2, 605.6],
                            [0, 0, 1]])
-        self.Kinv = np.linalg.norm(self.K)
+        self.Kinv = np.linalg.inv(self.K)
         self.dist = np.array([-0.14964, 0.13337, 0.0, 0.0, 0.0])
 
     def undistort_image(self, img):

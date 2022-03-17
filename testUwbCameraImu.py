@@ -49,7 +49,7 @@ def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
 
 def imshow_inloop(image, title="Camera"):
     #img_show = cv2.resize(image, (1920, 1200))
-    cv2.imshow(title, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    cv2.imshow(title, image)
     # Press 'q' to exit!
     if cv2.waitKey(1) & 0xFF == ord("q"):
         exit()
