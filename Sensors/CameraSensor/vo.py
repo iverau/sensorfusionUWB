@@ -40,7 +40,7 @@ class VisualOdometry:
 
     def track(self, image):
         self.img_cur = image
-        #self.gt = ground_truth
+        #self.gt = 1
 
         if self.state == VOState.NO_IMAGES_YET:
             self.process_first_image()
@@ -138,7 +138,7 @@ class VisualOdometry:
         # Calculate start translation
         if not self.pose_initialized:
             self.t0_est = np.array([self.cur_t[0], self.cur_t[1], self.cur_t[2]])
-            self.t0_gt = np.array([self.gt.x, self.gt.y, self.gt.z])
+            #self.t0_gt = np.array([self.gt.x, self.gt.y, self.gt.z])
             self.pose_initialized = True
 
         # Trajectory starts at translation=0
@@ -151,9 +151,9 @@ class VisualOdometry:
             ]
             self.traj3d_est.append(p_est)
             # Groundtruth
-            p_gt = [
-                self.gt.x - self.t0_gt[0],
-                self.gt.y - self.t0_gt[1],
-                self.gt.z - self.t0_gt[2],
-            ]
-            self.traj3d_gt.append(p_gt)
+            #p_gt = [
+            #    self.gt.x - self.t0_gt[0],
+            #    self.gt.y - self.t0_gt[1],
+            #    self.gt.z - self.t0_gt[2],
+            #]
+            #self.traj3d_gt.append(p_gt)

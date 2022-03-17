@@ -15,6 +15,45 @@ from Sensors.CameraSensor.featureDetector import *
 from Sensors.CameraSensor.featureMatcher import *
 from Sensors.CameraSensor.vo import VisualOdometry
 
+import math
+
+
+draw_scale = 1
+traj_img_size = 800
+traj_img = np.zeros((traj_img_size, traj_img_size, 3), dtype=np.uint8)
+
+
+
+
+def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
+    half_traj_img_size = int(0.5 * traj_img_size)
+
+    draw_x, draw_y = (
+        int(draw_scale * x_est) + half_traj_img_size,
+        half_traj_img_size - int(draw_scale * z_est),
+    )
+    #true_x, true_y = (
+    #    int(draw_scale * x_gt) + half_traj_img_size,
+    #    half_traj_img_size - int(draw_scale * z_gt),
+    #)
+    cv2.circle(traj_img, (draw_x, draw_y), 1, (0, 255, 0), 1)
+    #cv2.circle(traj_img, (true_x, true_y), 1, (0, 0, 255), 1)
+
+    # write text on traj_img
+    cv2.rectangle(traj_img, (10, 20), (600, 60), (0, 0, 0), -1)
+    text = "Coordinates: x=%2fm y=%2fm z=%2fm" % (x_est, y_est, z_est)
+    cv2.putText(
+        traj_img, text, (20, 40), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, 8
+    )
+    cv2.imshow("Trajectory", traj_img)
+
+def imshow_inloop(image, title="Camera"):
+    #img_show = cv2.resize(image, (1920, 1200))
+    cv2.imshow(title, cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+    # Press 'q' to exit!
+    if cv2.waitKey(1) & 0xFF == ord("q"):
+        exit()
+
 class CameraUwbImuFusion:
 
     def __init__(self) -> None:
@@ -45,7 +84,7 @@ class CameraUwbImuFusion:
         # Visual odometry part
         camera = PinholeCamera()
         geometry = EpipolarGeometry(camera)
-        feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
+        feature_detector = feature_detector_factory(FeatureDetectorType.ORB)
         feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
 
         self.visual_odometry = VisualOdometry(feature_detector, feature_matcher, geometry)
@@ -87,12 +126,41 @@ class CameraUwbImuFusion:
     def run(self):
         imu_measurements = []
         iteration_number = 0
+        iteration_number_cam = 0
 
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value == "Camera":
                 self.visual_odometry.track(measurement.image)
+                if iteration_number_cam > 0:
+                    x_est, y_est, z_est = self.visual_odometry.traj3d_est[-1]
+                    #x_gt, y_gt, z_gt = self.visual_odometry.traj3d_gt[-1]
+
+                    # Plot 2D trajectory
+                    draw_trajectory_2D(x_est, y_est, z_est, 0, 0, 0)
+
+                    # Draw matches
+                    imshow_inloop(self.visual_odometry.img_match, "Inlier matches")
+
+                    # Plot number of matched and inlier features
+                    #matched_points_plt.draw([iteration_number, self.visual_odometry.num_matches], "# matches", color="b")
+                    #matched_points_plt.draw([iteration_number, self.visual_odometry.num_inliers], "# inliers", color="g")
+
+                    # Plot pose vector
+                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[0]], "traj_x", color="r")
+                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[1]], "traj_y", color="g")
+                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[2]], "traj_z", color="b")
+
+                    # Plot trajecotry error
+                    #error_plt.draw([iteration_number, math.fabs(x_gt - x_est)], "err_x", color="r")
+                    #error_plt.draw([iteration_number, math.fabs(y_gt - y_est)], "err_y", color="g")
+                    #error_plt.draw([iteration_number, math.fabs(z_gt - z_est)], "err_z", color="b")
+                iteration_number_cam += 1
+            iteration_number += 1
+            scale = 1
+            print(iteration_number)
 
 
 fusion = CameraUwbImuFusion()
 fusion.run()
+
