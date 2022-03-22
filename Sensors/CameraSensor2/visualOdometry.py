@@ -2,21 +2,24 @@ from Sensors.CameraSensor2.camera import PinholeCamera
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.spatial.transform import Rotation as Rot
 class VisualOdometry:
 
     def __init__(self) -> None:
         self.camera = PinholeCamera()
         self.detector = cv2.ORB_create(2000, 1.2, 8)
         self.lk_params = dict(winSize  = (21,21), criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
-        self.image = None
+        self.old_image = None
+        self.scale = 1.0
 
     def detect(self, img):
         points = self.detector.detect(img)
         return np.array([x.pt for x in points], dtype=np.float32).reshape(-1, 1, 2)
 
     def track(self, image):
+        image = np.array(image)
         # Track stuff
-        if self.image is not None:
+        if self.old_image is not None:
             
             new_points, st, err = cv2.calcOpticalFlowPyrLK(self.old_image, image, self.old_points, None, **self.lk_params)
 
@@ -25,9 +28,18 @@ class VisualOdometry:
             self.good_new = new_points[st==1]
 
             E, _ = cv2.findEssentialMat(self.good_new, self.good_old, self.camera.K, cv2.RANSAC, 0.999, 1.0, None)
-            _, self.R, self.t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.camera.K self.R.copy(), self.t.copy(), None)
+            _, R, t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.R)
+            
+            #Kinematic equations
+            self.t += self.R @ t
+            self.R = R.dot(self.R)
+
+            rotation = Rot.from_matrix(self.R)
+            print("Rotation", rotation.as_euler("zyx", degrees=True))
 
             # Reset the variables to the new varaibles
+            self.old_image = image
+            self.old_points = new_points
 
             """
             keypoints = self.detector.detect(image, None)
@@ -41,6 +53,10 @@ class VisualOdometry:
             # Case for first image
             self.old_image = image
             self.old_points = self.detect(image)
+            self.R = np.diag([1.0, 1.0, 1.0])
+            #self.R = self.R.dot(self.R)
+            #print(self.R)
+            self.t = np.array([[0.0, 0.0, 0.0]]).T
 
     def update_scale(self):
         # Update the scale parameter 
