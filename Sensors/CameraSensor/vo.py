@@ -1,5 +1,7 @@
+from math import degrees
 import numpy as np
 from enum import Enum
+from scipy.spatial.transform import Rotation as R
 
 
 MIN_NUM_FEATURES = 2000
@@ -134,6 +136,8 @@ class VisualOdometry:
         # Predict pose
         self.cur_t = self.cur_t + 1 * self.cur_R.dot(self.t)
         self.cur_R = self.cur_R.dot(self.R)
+        rotation = R.from_matrix(self.cur_R)
+        print(rotation.as_euler("zyx", degrees=True))
 
         # Calculate start translation
         if not self.pose_initialized:

@@ -84,7 +84,7 @@ class CameraUwbImuFusion:
         # Visual odometry part
         camera = PinholeCamera()
         geometry = EpipolarGeometry(camera)
-        feature_detector = feature_detector_factory(FeatureDetectorType.ORB)
+        feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
         feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
 
         self.visual_odometry = VisualOdometry(feature_detector, feature_matcher, geometry)
@@ -156,9 +156,10 @@ class CameraUwbImuFusion:
                     #error_plt.draw([iteration_number, math.fabs(y_gt - y_est)], "err_y", color="g")
                     #error_plt.draw([iteration_number, math.fabs(z_gt - z_est)], "err_z", color="b")
                 iteration_number_cam += 1
+                print(iteration_number_cam)
             iteration_number += 1
             scale = 1
-            print(iteration_number)
+            
 
 
 fusion = CameraUwbImuFusion()
