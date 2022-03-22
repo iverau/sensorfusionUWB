@@ -13,7 +13,7 @@ from Sensors.CameraSensor.camera import PinholeCamera
 from Sensors.CameraSensor.epipolarGeometry import EpipolarGeometry
 from Sensors.CameraSensor.featureDetector import *
 from Sensors.CameraSensor.featureMatcher import *
-from Sensors.CameraSensor.vo import VisualOdometry
+from Sensors.CameraSensor2.visualOdometry import VisualOdometry
 
 import math
 
@@ -87,7 +87,7 @@ class CameraUwbImuFusion:
         feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
         feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
 
-        self.visual_odometry = VisualOdometry(feature_detector, feature_matcher, geometry)
+        self.visual_odometry = VisualOdometry()
 
     def initialize_graph(self):
 
@@ -132,29 +132,7 @@ class CameraUwbImuFusion:
 
             if measurement.measurement_type.value == "Camera":
                 self.visual_odometry.track(measurement.image)
-                if iteration_number_cam > 0:
-                    x_est, y_est, z_est = self.visual_odometry.traj3d_est[-1]
-                    #x_gt, y_gt, z_gt = self.visual_odometry.traj3d_gt[-1]
 
-                    # Plot 2D trajectory
-                    draw_trajectory_2D(x_est, y_est, z_est, 0, 0, 0)
-
-                    # Draw matches
-                    imshow_inloop(self.visual_odometry.img_match, "Inlier matches")
-
-                    # Plot number of matched and inlier features
-                    #matched_points_plt.draw([iteration_number, self.visual_odometry.num_matches], "# matches", color="b")
-                    #matched_points_plt.draw([iteration_number, self.visual_odometry.num_inliers], "# inliers", color="g")
-
-                    # Plot pose vector
-                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[0]], "traj_x", color="r")
-                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[1]], "traj_y", color="g")
-                    #xyz_plt.draw([iteration_number, self.visual_odometry.t[2]], "traj_z", color="b")
-
-                    # Plot trajecotry error
-                    #error_plt.draw([iteration_number, math.fabs(x_gt - x_est)], "err_x", color="r")
-                    #error_plt.draw([iteration_number, math.fabs(y_gt - y_est)], "err_y", color="g")
-                    #error_plt.draw([iteration_number, math.fabs(z_gt - z_est)], "err_z", color="b")
                 iteration_number_cam += 1
                 print(iteration_number_cam)
             iteration_number += 1
