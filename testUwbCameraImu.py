@@ -15,6 +15,8 @@ from Sensors.CameraSensor.featureDetector import *
 from Sensors.CameraSensor.featureMatcher import *
 from Sensors.CameraSensor2.visualOdometry import VisualOdometry
 
+import matplotlib.pyplot as plt
+
 import math
 
 
@@ -138,7 +140,13 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
             
+        #plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
+        #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
+        plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
+        plt.show()
 
+        plt.plot(range(len(self.visual_odometry.y)), np.array(self.visual_odometry.y))
+        plt.show()
 
 fusion = CameraUwbImuFusion()
 fusion.run()

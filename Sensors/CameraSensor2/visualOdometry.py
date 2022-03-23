@@ -12,6 +12,14 @@ class VisualOdometry:
         self.old_image = None
         self.scale = 1.0
 
+        # States
+        self.roll = []
+        self.pitch = []
+        self.yaw = []
+        self.x = []
+        self.y = []
+        self.z = []
+
     def detect(self, img):
         points = self.detector.detect(img)
         return np.array([x.pt for x in points], dtype=np.float32).reshape(-1, 1, 2)
@@ -36,6 +44,15 @@ class VisualOdometry:
 
             rotation = Rot.from_matrix(self.R)
             print("Rotation", rotation.as_euler("zyx", degrees=True))
+            self.roll.append( rotation.as_euler("zyx", degrees=True)[0])
+            self.pitch.append( rotation.as_euler("zyx", degrees=True)[1])
+            self.yaw.append( rotation.as_euler("zyx", degrees=True)[2])
+
+            self.x.append(self.t[0])
+            self.y.append(self.t[1])
+            self.z.append(self.t[2])
+
+
 
             # Reset the variables to the new varaibles
             self.old_image = image
@@ -54,8 +71,6 @@ class VisualOdometry:
             self.old_image = image
             self.old_points = self.detect(image)
             self.R = np.diag([1.0, 1.0, 1.0])
-            #self.R = self.R.dot(self.R)
-            #print(self.R)
             self.t = np.array([[0.0, 0.0, 0.0]]).T
 
     def update_scale(self):
