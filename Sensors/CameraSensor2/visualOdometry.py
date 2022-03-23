@@ -7,10 +7,11 @@ class VisualOdometry:
 
     def __init__(self) -> None:
         self.camera = PinholeCamera()
-        self.detector = cv2.ORB_create(2000, 1.2, 8)
+        self.detector = detector=cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
         self.lk_params = dict(winSize  = (21,21), criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
         self.scale = 1.0
+        self.n_features = 0
 
         # States
         self.roll = []
@@ -29,6 +30,9 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
             
+            if self.n_features < 2000:
+                self.old_points = self.detect(self.old_image)
+
             new_points, st, err = cv2.calcOpticalFlowPyrLK(self.old_image, image, self.old_points, None, **self.lk_params)
 
 
@@ -40,23 +44,28 @@ class VisualOdometry:
             
             #Kinematic equations
             self.t += self.R @ t
-            self.R = R.dot(self.R)
+            self.R = self.R.dot(R)
 
             rotation = Rot.from_matrix(self.R)
-            print("Rotation", rotation.as_euler("zyx", degrees=True))
-            self.roll.append( rotation.as_euler("zyx", degrees=True)[0])
-            self.pitch.append( rotation.as_euler("zyx", degrees=True)[1])
-            self.yaw.append( rotation.as_euler("zyx", degrees=True)[2])
 
-            self.x.append(self.t[0])
-            self.y.append(self.t[1])
-            self.z.append(self.t[2])
+            #print("Rotation", rotation.as_euler("zyx", degrees=True))
+            self.roll.append( rotation.as_euler("zyx", degrees=True)[2])
+            self.pitch.append( rotation.as_euler("zyx", degrees=True)[0])
+            self.yaw.append( rotation.as_euler("zyx", degrees=True)[1])
+
+            self.x.append(self.t[2])
+            self.y.append(self.t[0])
+            self.z.append(self.t[1])
 
 
 
             # Reset the variables to the new varaibles
             self.old_image = image
             self.old_points = new_points
+            self.n_features = self.good_new.shape[0]
+
+            cv2.imshow("Frame", image)
+            cv2.waitKey(1)
 
             """
             keypoints = self.detector.detect(image, None)

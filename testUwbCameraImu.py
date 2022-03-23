@@ -142,10 +142,12 @@ class CameraUwbImuFusion:
             
         #plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
         #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
-        plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
+        plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
+        plt.title("Yaw measurements")
         plt.show()
 
-        plt.plot(range(len(self.visual_odometry.y)), np.array(self.visual_odometry.y))
+        plt.plot(range(len(self.visual_odometry.x)), np.array(self.visual_odometry.x))
+        plt.title("X measurements")
         plt.show()
 
 fusion = CameraUwbImuFusion()
