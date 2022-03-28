@@ -1,3 +1,4 @@
+from math import degrees
 from Sensors.CameraSensor2.camera import PinholeCamera
 import cv2
 import matplotlib.pyplot as plt
@@ -24,6 +25,9 @@ class VisualOdometry:
         self.y = []
         self.z = []
 
+        # -90 grader rundt z, -90 grader i x
+        self.cam_t_body = Rot.from_euler('zyx', [-90, 0, -90], degrees=True).as_matrix()
+
     def detect(self, img):
         points = self.detector.detect(img)
         return np.array([x.pt for x in points], dtype=np.float32).reshape(-1, 1, 2)
@@ -45,22 +49,25 @@ class VisualOdometry:
             E, _ = cv2.findEssentialMat(self.good_new, self.good_old, self.camera.K, cv2.RANSAC, 0.999, 1.0, None)
             _, R, t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.R)
             
-            #Kinematic equations
+            # Transform the rotation from camera coordinates to 
+            R = self.cam_t_body.T @ R
+            t = self.cam_t_body.T @ t
+
+
+            #Kinematic equations for VO in NED
             self.t += self.R @ t
             self.R = self.R.dot(R)
 
-            print(self.t)
 
             rotation = Rot.from_matrix(self.R)
 
-            #print("Rotation", rotation.as_euler("zyx", degrees=True))
             self.roll.append( rotation.as_euler("zyx", degrees=True)[2])
             self.pitch.append( rotation.as_euler("zyx", degrees=True)[0])
             self.yaw.append( rotation.as_euler("zyx", degrees=True)[1])
 
-            self.x.append(self.t.copy()[2])
-            self.y.append(self.t.copy()[0])
-            self.z.append(self.t.copy()[1])
+            self.x.append(self.t.copy()[0])
+            self.y.append(self.t.copy()[1])
+            self.z.append(self.t.copy()[2])
 
 
 
@@ -86,11 +93,10 @@ class VisualOdometry:
             # Case for first image
             self.old_image = image
             self.old_points = self.detect(image)
+
+            # Initial rotation and transelation set to ground truth values
             self.R = self.initial_rotation
-
-            transelation_in_body = self.initial_rotation.T @ self.initial_position
-
-            self.t = np.asarray([[transelation_in_body[2], transelation_in_body[0], transelation_in_body[1]]]).T
+            self.t = np.asarray([self.initial_position]).T
 
     def update_scale(self):
         # Update the scale parameter 

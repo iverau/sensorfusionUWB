@@ -143,6 +143,9 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
+            if iteration_number_cam > 100:
+                break
+
         """     
         plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
         plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
