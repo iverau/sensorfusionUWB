@@ -5,13 +5,16 @@ import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 class VisualOdometry:
 
-    def __init__(self) -> None:
+    def __init__(self, rot_init, t_init) -> None:
         self.camera = PinholeCamera()
-        self.detector = detector=cv2.FastFeatureDetector_create(threshold=25, nonmaxSuppression=True)
+        self.detector = cv2.ORB_create(2500, 1.2, 8)
         self.lk_params = dict(winSize  = (21,21), criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
         self.scale = 1.0
         self.n_features = 0
+
+        self.initial_rotation = rot_init
+        self.initial_position = t_init
 
         # States
         self.roll = []
@@ -30,7 +33,7 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
             
-            if self.n_features < 2000:
+            if self.n_features < 8000:
                 self.old_points = self.detect(self.old_image)
 
             new_points, st, err = cv2.calcOpticalFlowPyrLK(self.old_image, image, self.old_points, None, **self.lk_params)
@@ -46,6 +49,8 @@ class VisualOdometry:
             self.t += self.R @ t
             self.R = self.R.dot(R)
 
+            print(self.t)
+
             rotation = Rot.from_matrix(self.R)
 
             #print("Rotation", rotation.as_euler("zyx", degrees=True))
@@ -53,9 +58,9 @@ class VisualOdometry:
             self.pitch.append( rotation.as_euler("zyx", degrees=True)[0])
             self.yaw.append( rotation.as_euler("zyx", degrees=True)[1])
 
-            self.x.append(self.t[2])
-            self.y.append(self.t[0])
-            self.z.append(self.t[1])
+            self.x.append(self.t.copy()[2])
+            self.y.append(self.t.copy()[0])
+            self.z.append(self.t.copy()[1])
 
 
 
@@ -63,6 +68,8 @@ class VisualOdometry:
             self.old_image = image
             self.old_points = new_points
             self.n_features = self.good_new.shape[0]
+
+            
 
             cv2.imshow("Frame", image)
             cv2.waitKey(1)
@@ -79,8 +86,11 @@ class VisualOdometry:
             # Case for first image
             self.old_image = image
             self.old_points = self.detect(image)
-            self.R = np.diag([1.0, 1.0, 1.0])
-            self.t = np.array([[0.0, 0.0, 0.0]]).T
+            self.R = self.initial_rotation
+
+            transelation_in_body = self.initial_rotation.T @ self.initial_position
+
+            self.t = np.asarray([[transelation_in_body[2], transelation_in_body[0], transelation_in_body[1]]]).T
 
     def update_scale(self):
         # Update the scale parameter 

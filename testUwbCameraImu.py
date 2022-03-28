@@ -89,7 +89,7 @@ class CameraUwbImuFusion:
         feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
         feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
 
-        self.visual_odometry = VisualOdometry()
+        
 
     def initialize_graph(self):
 
@@ -105,11 +105,11 @@ class CameraUwbImuFusion:
         self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10]))
         self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.0001, 0.0001, 0.0001]))
         self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-12, 5e-12, 5e-12, 5e-7, 5e-7, 5e-7]))
-        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
+        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False)
         T_init = self.ground_truth.initial_pose()[3:]
         T_init[2] = -0.7
 
-        self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
+        self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init.as_matrix()), T_init)
 
 
         self.current_velocity = self.ground_truth.initial_velocity()
@@ -125,6 +125,9 @@ class CameraUwbImuFusion:
         self.graph_values.insert(B1, self.current_bias)
         self.time_stamps.append(self.ground_truth.time[0])
 
+        # Initialize vo
+        self.visual_odometry = VisualOdometry(R_init.as_matrix(), T_init)
+
     def run(self):
         imu_measurements = []
         iteration_number = 0
@@ -139,14 +142,18 @@ class CameraUwbImuFusion:
                 print(iteration_number_cam)
             iteration_number += 1
             scale = 1
-            
-        #plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
-        #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
+
+        """     
+        plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
+        plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.show()
+        """
 
-        plt.plot(range(len(self.visual_odometry.x)), np.array(self.visual_odometry.x))
+        
+        #plt.plot(range(len(self.visual_odometry.x)), np.array(self.visual_odometry.x))
+        plt.plot(np.array(self.visual_odometry.y), np.array(self.visual_odometry.x))
         plt.title("X measurements")
         plt.show()
 
