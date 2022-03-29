@@ -21,12 +21,12 @@ class VisualOdometry:
         self.roll = []
         self.pitch = []
         self.yaw = []
-        self.x = []
-        self.y = []
-        self.z = []
+        self.East = []
+        self.North = []
+        self.Down = []
 
         # -90 grader rundt z, -90 grader i x
-        self.cam_t_ned = Rot.from_euler('xyz', [90, 90, 0], degrees=True).as_matrix()
+        self.cam_t_ned = Rot.from_euler('xyz', [-90, -90, 0], degrees=True).as_matrix()
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -46,21 +46,20 @@ class VisualOdometry:
             self.good_old = self.old_points[st==1]
             self.good_new = new_points[st==1]
 
-            E, _ = cv2.findEssentialMat(self.good_new, self.good_old, self.camera.K, cv2.RANSAC, 0.999, 1.0, None)
+            E, _ = cv2.findEssentialMat(self.good_new, self.good_old, self.camera.K, cv2.RANSAC, 0.9, 1.0, None)
             _, R, t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.R)
             
             # Transform the rotation from camera coordinates to 
-            #R = self.cam_t_body @ R
-            #t = self.cam_t_body @ t
 
-            print("Displaced rotation", Rot.from_matrix(R).as_euler("xyz", degrees=True))
-
+            #print("Displaced rotation", Rot.from_matrix(R).as_euler("xyz", degrees=True))
+            print("Trans før: ",t, "\n")
+            print("Transformation:", R @ t, "\n")
 
             #Kinematic equations for VO in NED
-            self.t = self.t + self.R @ t
-            self.R = self.R.dot(R)
+            self.t = self.t + R @ t
+            self.R = R.dot(self.R)
 
-            print(self.t)
+            print("Trans etter: ",self.t)
 
 
             rotation = Rot.from_matrix(self.cam_t_ned.T @ self.R)
@@ -69,9 +68,9 @@ class VisualOdometry:
             self.pitch.append( rotation.as_euler("xyz", degrees=True)[1])
             self.yaw.append( rotation.as_euler("xyz", degrees=True)[2])
 
-            self.x.append(self.t.copy()[0])
-            self.y.append(self.t.copy()[1])
-            self.z.append(self.t.copy()[2])
+            self.North.append(self.cam_t_ned.T.dot(self.t.copy())[0])
+            self.East.append(self.cam_t_ned.T.dot(self.t.copy())[1])
+            self.Down.append(self.cam_t_ned.T.dot(self.t.copy())[2])
 
 
 
@@ -85,13 +84,13 @@ class VisualOdometry:
             cv2.imshow("Frame", image)
             cv2.waitKey(1)
             """
-            """
+            
             keypoints = self.detector.detect(image, None)
             keypoints, descriptors = self.detector.compute(image, keypoints)
             new_img = cv2.drawKeypoints(image, keypoints, None, color=(0, 255, 0), flags=0)
-            plt.imshow(new_img)
-            plt.show()
-            """
+            cv2.imshow("Frame", new_img)
+            cv2.waitKey(1)
+            
 
         else:
             # Case for first image
