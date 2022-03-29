@@ -26,7 +26,7 @@ class VisualOdometry:
         self.z = []
 
         # -90 grader rundt z, -90 grader i x
-        self.cam_t_body = Rot.from_euler('xyz', [-90, -90, 0], degrees=True).as_matrix()
+        self.cam_t_ned = Rot.from_euler('xyz', [90, 90, 0], degrees=True).as_matrix()
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -50,19 +50,20 @@ class VisualOdometry:
             _, R, t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.R)
             
             # Transform the rotation from camera coordinates to 
-            R = self.cam_t_body @ R
-            t = self.cam_t_body @ t
+            #R = self.cam_t_body @ R
+            #t = self.cam_t_body @ t
 
+            print("Displaced rotation", Rot.from_matrix(R).as_euler("xyz", degrees=True))
 
 
             #Kinematic equations for VO in NED
-            self.t = self.t +  self.R @ t
+            self.t = self.t + self.R @ t
             self.R = self.R.dot(R)
 
             print(self.t)
 
 
-            rotation = Rot.from_matrix(self.R)
+            rotation = Rot.from_matrix(self.cam_t_ned.T @ self.R)
 
             self.roll.append( rotation.as_euler("xyz", degrees=True)[0])
             self.pitch.append( rotation.as_euler("xyz", degrees=True)[1])
@@ -80,10 +81,10 @@ class VisualOdometry:
             self.n_features = self.good_new.shape[0]
 
             
-
+            """
             cv2.imshow("Frame", image)
             cv2.waitKey(1)
-
+            """
             """
             keypoints = self.detector.detect(image, None)
             keypoints, descriptors = self.detector.compute(image, keypoints)
@@ -98,7 +99,7 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.initial_rotation
+            self.R = self.cam_t_ned @ self.initial_rotation
             self.t = np.asarray([self.initial_position]).T
 
     def update_scale(self):
