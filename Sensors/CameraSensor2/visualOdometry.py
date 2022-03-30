@@ -37,8 +37,8 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
             
-            if self.n_features < 2000:
-                self.old_points = self.detect(self.old_image)
+            
+            self.old_points = self.detect(self.old_image)
 
             new_points, st, err = cv2.calcOpticalFlowPyrLK(self.old_image, image, self.old_points, None, **self.lk_params)
 
