@@ -143,12 +143,12 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 10000:
+            if iteration_number_cam > 150:
                 break
 
            
-        plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
-        plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
+        #plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
+        #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.show()

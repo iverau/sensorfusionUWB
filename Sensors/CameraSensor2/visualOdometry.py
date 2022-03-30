@@ -153,7 +153,7 @@ class VisualOdometry:
         self.Down = []
 
         # -90 grader rundt z, -90 grader i x
-        self.cam_t_ned = Rot.from_euler('xyz', [-90, -90, 0], degrees=True).as_matrix()
+        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]]) @ Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -229,15 +229,15 @@ class VisualOdometry:
             print("Trans etter: ",self.t)
 
 
-            rotation = Rot.from_matrix(self.cam_t_ned.T @ self.R)
+            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
 
             self.roll.append( rotation.as_euler("xyz", degrees=True)[0])
             self.pitch.append( rotation.as_euler("xyz", degrees=True)[1])
             self.yaw.append( rotation.as_euler("xyz", degrees=True)[2])
 
-            self.North.append(self.cam_t_ned.T.dot(self.t.copy())[0])
-            self.East.append(self.cam_t_ned.T.dot(self.t.copy())[1])
-            self.Down.append(self.cam_t_ned.T.dot(self.t.copy())[2])
+            self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
+            self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
+            self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
 
 
 
@@ -265,7 +265,7 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.cam_t_ned @ self.initial_rotation
+            self.R = self.body_t_cam @ self.initial_rotation
             self.t = np.asarray([self.initial_position]).T
             print("Intiial things", self.t)
             print("Intiial things", self.R)
