@@ -143,7 +143,7 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 100:
+            if iteration_number_cam > 10000:
                 break
 
            
@@ -155,8 +155,7 @@ class CameraUwbImuFusion:
         
 
         
-        #plt.plot(range(len(self.visual_odometry.x)), np.array(self.visual_odometry.x))
-        plt.plot(np.array(self.visual_odometry.East), np.array(self.visual_odometry.Down))
+        plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
         plt.title("Horisontal plot")
         plt.show()
 
