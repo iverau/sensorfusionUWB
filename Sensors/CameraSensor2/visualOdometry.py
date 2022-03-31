@@ -181,8 +181,8 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
             
-            self.kp1, self.des1 = self.detector.detectAndCompute(self.old_image, None)
-            self.kp2, self.des2 = self.detector.detectAndCompute(image, None)
+            self.kp2, self.des2 = self.detector.detectAndCompute(self.old_image, None)
+            self.kp1, self.des1 = self.detector.detectAndCompute(image, None)
 
             matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
             matches = matcher.knnMatch(self.des1, self.des2, k=2)
@@ -266,7 +266,16 @@ class VisualOdometry:
 
             # Initial rotation and transelation set to ground truth values
             self.R = self.body_t_cam @ self.initial_rotation
-            self.t = np.asarray([self.initial_position]).T
+            self.t = self.body_t_cam  @ np.asarray([self.initial_position]).T
+
+            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
+            self.roll.append( rotation.as_euler("xyz", degrees=True)[0])
+            self.pitch.append( rotation.as_euler("xyz", degrees=True)[1])
+            self.yaw.append( rotation.as_euler("xyz", degrees=True)[2])
+
+            self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
+            self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
+            self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
             print("Intiial things", self.t)
             print("Intiial things", self.R)
 

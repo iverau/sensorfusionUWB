@@ -14,6 +14,8 @@ from Sensors.CameraSensor.epipolarGeometry import EpipolarGeometry
 from Sensors.CameraSensor.featureDetector import *
 from Sensors.CameraSensor.featureMatcher import *
 from Sensors.CameraSensor2.visualOdometry import VisualOdometry
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
+
 
 import matplotlib.pyplot as plt
 
@@ -123,7 +125,7 @@ class CameraUwbImuFusion:
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
-        self.time_stamps.append(self.ground_truth.time[0])
+        #self.time_stamps.append(self.ground_truth.time[0])
 
         # Initialize vo
         self.visual_odometry = VisualOdometry(R_init.as_matrix(), T_init)
@@ -137,13 +139,14 @@ class CameraUwbImuFusion:
 
             if measurement.measurement_type.value == "Camera":
                 self.visual_odometry.track(measurement.image)
+                self.time_stamps.append(measurement.time.to_time())
 
                 iteration_number_cam += 1
                 print(iteration_number_cam)
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 150:
+            if iteration_number_cam > 50000:
                 break
 
            
@@ -151,12 +154,15 @@ class CameraUwbImuFusion:
         #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
-        plt.show()
-        
+        plt.figure(2)
+        plot_position(np.array([np.array(self.visual_odometry.North)[:,0], np.array(self.visual_odometry.East)[:,0], np.array(self.visual_odometry.Down)[:,0]]).T, self.ground_truth, self.time_stamps)
+        plt.figure(3)
+        plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
+        plt.figure(4)
 
         
-        plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
-        plt.title("Horisontal plot")
+        #plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
+        #plt.title("Horisontal plot")
         plt.show()
 
 fusion = CameraUwbImuFusion()
