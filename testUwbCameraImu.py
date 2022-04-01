@@ -146,7 +146,7 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 50000:
+            if iteration_number_cam > 500:
                 break
 
            

@@ -140,6 +140,7 @@ class VisualOdometry:
         self.old_image = None
         self.scale = 1.0
         self.n_features = 0
+        self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
         self.initial_rotation = rot_init
         self.initial_position = t_init
@@ -181,46 +182,32 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
             
+            print("Start detector")
             self.kp2, self.des2 = self.detector.detectAndCompute(self.old_image, None)
             self.kp1, self.des1 = self.detector.detectAndCompute(image, None)
 
-            matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
-            matches = matcher.knnMatch(self.des1, self.des2, k=2)
+            print("Start matcher")
+            matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
             imageIndexes = []
             for m, n in matches:
                 if m.distance < 0.75*n.distance:
                     imageIndexes.append([m.queryIdx, m.trainIdx])
 
+            print("Start outlier and estimate E")
             self.remove_outliers_with_ransac(imageIndexes)
             self.E = estimate_E(self.xy1, self.xy2)
-            """
-            self.old_points = self.detect(self.old_image)
-
-            new_points, st, err = cv2.calcOpticalFlowPyrLK(self.old_image, image, self.old_points, None, **self.lk_params)
-
-
-            self.good_old = self.old_points[st==1]
-            self.good_new = new_points[st==1]
-            """
-
-            #E, _ = cv2.findEssentialMat(self.good_new, self.good_old, self.camera.K, cv2.RANSAC, 0.9, 1.0, None)
-            #_, R, t, _ = cv2.recoverPose(E, self.good_old, self.good_new, self.R)
             
+            # Start extrating T
             self.X, T = self.get_best_point_corespondence()
             
             t = T[:3, 3]
             R = T[:3, :3]
             t = np.asarray([t]).T
-            # Transform the rotation from camera coordinates to 
 
-            #print("Displaced rotation", Rot.from_matrix(R).as_euler("xyz", degrees=True))
+            # Transform the rotation from camera coordinates to 
             print("Trans før: ",t, "\n")
             print("Transformation:", R @ t, "\n")
-
-            print("Shape of you", (R@t).shape)
-            print("Shape of him", t.shape)
-
 
             #Kinematic equations for VO in NED
             self.t += R @ t
@@ -239,18 +226,11 @@ class VisualOdometry:
             self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
             self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
 
+            print("Fort gjort")
 
 
             # Reset the variables to the new varaibles
             self.old_image = image
-            #self.old_points = new_points
-            #self.n_features = self.good_new.shape[0]
-
-            
-            """
-            cv2.imshow("Frame", image)
-            cv2.waitKey(1)
-            """
             
             keypoints = self.detector.detect(image, None)
             keypoints, descriptors = self.detector.compute(image, keypoints)
@@ -266,7 +246,7 @@ class VisualOdometry:
 
             # Initial rotation and transelation set to ground truth values
             self.R = self.body_t_cam @ self.initial_rotation
-            self.t = self.body_t_cam  @ np.asarray([self.initial_position]).T
+            self.t =  self.body_t_cam @  self.initial_rotation.T @ np.asarray([self.initial_position]).T
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
             self.roll.append( rotation.as_euler("xyz", degrees=True)[0])

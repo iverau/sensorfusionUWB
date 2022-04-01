@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.spatial.transform import Rotation as Rot
 
 def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, ground_truth):
     plt.suptitle("Horizontal trajectory")
@@ -38,11 +39,11 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 def plot_position(position_estimates, ground_truth, time_steps):
     #time_steps[1:] -= time_steps[1] - time_steps[0]
-
+    body_pos = convert_to_body(ground_truth)
     plt.suptitle("Positions")
     plt.subplot(311)
     plt.plot(time_steps, position_estimates[:, 0])
-    plt.plot(ground_truth.time  , ground_truth.gt_transelation[0, :])
+    plt.plot(ground_truth.time  , body_pos.T[0, :])
     plt.legend(["Estimate", "Ground truth"])
 
     plt.grid()
@@ -50,19 +51,27 @@ def plot_position(position_estimates, ground_truth, time_steps):
 
     plt.subplot(312)
     plt.plot(time_steps, position_estimates[:, 1])
-    plt.plot(ground_truth.time  , ground_truth.gt_transelation[1, :])
+    plt.plot(ground_truth.time  , body_pos.T[1, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("East [m]")
 
     plt.subplot(313)
     plt.plot(time_steps, position_estimates[:, 2])
-    plt.plot(ground_truth.time  , ground_truth.gt_transelation[2, :])
+    plt.plot(ground_truth.time  , body_pos.T[2, :])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Down [m]")
 
     plt.tight_layout()
+
+def convert_to_body(ground_truth):
+    body_pos = []
+    for angel, position in zip(ground_truth.gt_angels, ground_truth.gt_transelation.T):
+        rotation = Rot.from_euler("xyz", [angel[0], angel[1], angel[2]])
+        body_pos.append(rotation.as_matrix() @ position.T)
+    #rotation = Rot.from_euler("xyz", [angels[0], angels[1], angels[2]], degrees=False)
+    return np.array(body_pos)
 
 
 def plot_angels(euler_angels, ground_truth, time_steps):
