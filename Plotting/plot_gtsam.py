@@ -38,7 +38,8 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
     plt.grid()
 
 def plot_position(position_estimates, ground_truth, time_steps):
-    #time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps = np.array(time_steps)
+    time_steps[:] -= 10
     body_pos = convert_to_body(ground_truth)
     plt.suptitle("Positions")
     plt.subplot(311)
@@ -65,17 +66,19 @@ def plot_position(position_estimates, ground_truth, time_steps):
 
     plt.tight_layout()
 
+#TODO: Finne ut om zyx eller xyz
 def convert_to_body(ground_truth):
     body_pos = []
     for angel, position in zip(ground_truth.gt_angels, ground_truth.gt_transelation.T):
         rotation = Rot.from_euler("xyz", [angel[0], angel[1], angel[2]])
-        body_pos.append(rotation.as_matrix() @ position.T)
-    #rotation = Rot.from_euler("xyz", [angels[0], angels[1], angels[2]], degrees=False)
+        body_pos.append(rotation.as_matrix().T @ position.T)
     return np.array(body_pos)
 
 
 def plot_angels(euler_angels, ground_truth, time_steps):
-    #time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps = np.array(time_steps)
+
+    time_steps[:] -= 10
     r2d = 180/np.pi
 
     plt.suptitle("Angels")

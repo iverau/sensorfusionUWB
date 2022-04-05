@@ -67,7 +67,7 @@ class CameraUwbImuFusion:
         isam_params.setRelinearizeSkip(1)
         self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
-        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=True)
+        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=False)
         self.imu_params: IMU = IMU()
         self.gnss_params: GNSS = GNSS()
 
@@ -107,10 +107,11 @@ class CameraUwbImuFusion:
         self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10]))
         self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.0001, 0.0001, 0.0001]))
         self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-12, 5e-12, 5e-12, 5e-7, 5e-7, 5e-7]))
+
+        # Pose for pre init
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False)
         T_init = self.ground_truth.initial_pose()[3:]
         T_init[2] = -0.7
-
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init.as_matrix()), T_init)
 
 
@@ -146,12 +147,10 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 500:
+            if iteration_number_cam > 50:
                 break
 
            
-        #plt.plot(range(len(self.visual_odometry.roll)), np.array(self.visual_odometry.roll))
-        #plt.plot(range(len(self.visual_odometry.pitch)), np.array(self.visual_odometry.pitch))
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.figure(2)
@@ -161,7 +160,7 @@ class CameraUwbImuFusion:
         plt.figure(4)
 
         
-        #plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
+        plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
         #plt.title("Horisontal plot")
         plt.show()
 
