@@ -43,15 +43,15 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 
 def find_index_closest(time_array, start_time):
-    temp_array = time_array - (time_array[0])
-    return (np.abs(temp_array - start_time)).argmin()
+    #temp_array = time_array - (time_array[0])
+    return (np.abs(time_array - start_time)).argmin()
 
 
 def convert_to_NED(ground_truth, position_estimates, time_steps):
     ned_positions = []
     for position, time in zip(position_estimates, time_steps):
         gt_index = find_index_closest(ground_truth.time, time)
-        print("Index", gt_index, time, ground_truth.time[gt_index-100])
+        print("Index", gt_index, time, ground_truth.time[gt_index])
         gt_angels = ground_truth.gt_angels[gt_index, :]
         rotation = Rot.from_euler(
             "xyz", [gt_angels[0], gt_angels[1], gt_angels[2]])
