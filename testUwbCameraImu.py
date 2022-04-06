@@ -27,8 +27,6 @@ traj_img_size = 800
 traj_img = np.zeros((traj_img_size, traj_img_size, 3), dtype=np.uint8)
 
 
-
-
 def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
     half_traj_img_size = int(0.5 * traj_img_size)
 
@@ -36,10 +34,10 @@ def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
         int(draw_scale * x_est) + half_traj_img_size,
         half_traj_img_size - int(draw_scale * z_est),
     )
-    #true_x, true_y = (
+    # true_x, true_y = (
     #    int(draw_scale * x_gt) + half_traj_img_size,
     #    half_traj_img_size - int(draw_scale * z_gt),
-    #)
+    # )
     cv2.circle(traj_img, (draw_x, draw_y), 1, (0, 255, 0), 1)
     #cv2.circle(traj_img, (true_x, true_y), 1, (0, 0, 255), 1)
 
@@ -47,9 +45,11 @@ def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
     cv2.rectangle(traj_img, (10, 20), (600, 60), (0, 0, 0), -1)
     text = "Coordinates: x=%2fm y=%2fm z=%2fm" % (x_est, y_est, z_est)
     cv2.putText(
-        traj_img, text, (20, 40), cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 255), 1, 8
+        traj_img, text, (20, 40), cv2.FONT_HERSHEY_PLAIN, 1, (255,
+                                                              255, 255), 1, 8
     )
     cv2.imshow("Trajectory", traj_img)
+
 
 def imshow_inloop(image, title="Camera"):
     #img_show = cv2.resize(image, (1920, 1200))
@@ -57,6 +57,7 @@ def imshow_inloop(image, title="Camera"):
     # Press 'q' to exit!
     if cv2.waitKey(1) & 0xFF == ord("q"):
         exit()
+
 
 class CameraUwbImuFusion:
 
@@ -66,8 +67,10 @@ class CameraUwbImuFusion:
         isam_params.setFactorization("QR")
         isam_params.setRelinearizeSkip(1)
         self.isam: gtsam.ISAM2 = gtsam.ISAM2(isam_params)
-        self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(DATASET_NUMBER)
-        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(DATASET_NUMBER, pre_initialization=False)
+        self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(
+            DATASET_NUMBER)
+        self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(
+            DATASET_NUMBER, pre_initialization=False)
         self.imu_params: IMU = IMU()
         self.gnss_params: GNSS = GNSS()
 
@@ -81,17 +84,17 @@ class CameraUwbImuFusion:
 
         # Setting up gtsam values
         self.graph_values: gtsam.Values = gtsam.Values()
-        self.factor_graph: gtsam.NonlinearFactorGraph  = gtsam.NonlinearFactorGraph()
+        self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        #sns.set()
+        # sns.set()
 
         # Visual odometry part
         camera = PinholeCamera()
         geometry = EpipolarGeometry(camera)
-        feature_detector = feature_detector_factory(FeatureDetectorType.SHI_THOMASI)
-        feature_matcher = feature_matcher_factory(FeatureMatcherType.OPTICAL_FLOW)
-
-        
+        feature_detector = feature_detector_factory(
+            FeatureDetectorType.SHI_THOMASI)
+        feature_matcher = feature_matcher_factory(
+            FeatureMatcherType.OPTICAL_FLOW)
 
     def initialize_graph(self):
 
@@ -104,29 +107,37 @@ class CameraUwbImuFusion:
         self.imu_bias_variables.append(B1)
 
         # Set priors
-        self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(np.array([1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10]))
-        self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(np.array([0.0001, 0.0001, 0.0001]))
-        self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(np.array([5e-12, 5e-12, 5e-12, 5e-7, 5e-7, 5e-7]))
+        self.prior_noise_x = gtsam.noiseModel.Diagonal.Sigmas(
+            np.array([1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10]))
+        self.prior_noise_v = gtsam.noiseModel.Diagonal.Sigmas(
+            np.array([0.0001, 0.0001, 0.0001]))
+        self.prior_noise_b = gtsam.noiseModel.Diagonal.Sigmas(
+            np.array([5e-12, 5e-12, 5e-12, 5e-7, 5e-7, 5e-7]))
 
         # Pose for pre init
-        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False)
+        R_init = R.from_euler(
+            "xyz", self.ground_truth.initial_pose()[:3], degrees=False)
         T_init = self.ground_truth.initial_pose()[3:]
         T_init[2] = -0.7
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init.as_matrix()), T_init)
 
-
         self.current_velocity = self.ground_truth.initial_velocity()
-        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.array([0, 0, 0, -15e-3, -5e-3, -7e-3])) 
-        self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
+        self.current_bias = gtsam.imuBias.ConstantBias(
+            np.zeros((3,)), np.array([0, 0, 0, -15e-3, -5e-3, -7e-3]))
+        self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(
+        ), self.current_pose.rotation().matrix().T @ self.current_velocity)
 
-        self.factor_graph.add(gtsam.PriorFactorPose3(X1, self.current_pose, self.prior_noise_x))
-        self.factor_graph.add(gtsam.PriorFactorVector(V1, self.current_velocity, self.prior_noise_v))
-        self.factor_graph.add(gtsam.PriorFactorConstantBias(B1, self.current_bias, self.prior_noise_b))
+        self.factor_graph.add(gtsam.PriorFactorPose3(
+            X1, self.current_pose, self.prior_noise_x))
+        self.factor_graph.add(gtsam.PriorFactorVector(
+            V1, self.current_velocity, self.prior_noise_v))
+        self.factor_graph.add(gtsam.PriorFactorConstantBias(
+            B1, self.current_bias, self.prior_noise_b))
 
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
-        #self.time_stamps.append(self.ground_truth.time[0])
+        # self.time_stamps.append(self.ground_truth.time[0])
 
         # Initialize vo
         self.visual_odometry = VisualOdometry(R_init.as_matrix(), T_init)
@@ -144,26 +155,29 @@ class CameraUwbImuFusion:
 
                 iteration_number_cam += 1
                 print(iteration_number_cam)
+                print("Start time of dataset", measurement.time)
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 300:
+            if iteration_number_cam > 50:
                 break
 
-           
-        plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
+        plt.plot(range(len(self.visual_odometry.yaw)),
+                 np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.figure(2)
-        plot_position(np.array([np.array(self.visual_odometry.North)[:,0], np.array(self.visual_odometry.East)[:,0], np.array(self.visual_odometry.Down)[:,0]]).T, self.ground_truth, self.time_stamps)
+        plot_position(np.array([np.array(self.visual_odometry.North)[:, 0], np.array(self.visual_odometry.East)[
+                      :, 0], np.array(self.visual_odometry.Down)[:, 0]]).T, self.ground_truth, self.time_stamps)
         plt.figure(3)
-        plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
+        plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(
+            self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
         plt.figure(4)
 
-        
-        plt.plot(np.array(self.visual_odometry.North), np.array(self.visual_odometry.East))
+        plt.plot(np.array(self.visual_odometry.North),
+                 np.array(self.visual_odometry.East))
         #plt.title("Horisontal plot")
         plt.show()
 
+
 fusion = CameraUwbImuFusion()
 fusion.run()
-

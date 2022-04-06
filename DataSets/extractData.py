@@ -1,4 +1,3 @@
-from pyrfc3339 import generate
 import rosbag
 from .datasetSettings import *
 import rospy
@@ -6,11 +5,13 @@ from DataTypes.measurement import generate_measurement
 import scipy.io
 import pymap3d as pm
 import numpy as np
+
+
 class ROSData:
 
     def __init__(self, dataset_number: int) -> None:
-        print("Initialize ROS dataset number ",dataset_number,".\n",end="")
-        
+        print("Initialize ROS dataset number ", dataset_number, ".\n", end="")
+
         # Initializes the dataset settings
         self.dataset_settings = ROSData.select_dataset(dataset_number)
 
@@ -18,10 +19,10 @@ class ROSData:
 
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        self.bag_start_time = rospy.Time(self.bag.get_start_time(
+        ) + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
-
 
     def extract_initial_pose(self):
         for _, msg, t in self.bag.read_messages(topics=["/ublox2/fix"], start_time=self.bag_start_time):
@@ -41,21 +42,23 @@ class ROSData:
     def convert_GNSS_to_NED(self, msg):
         ned_origin = self.extract_ned_origin()
         n, e, d = pm.geodetic2ned(
-                msg.latitude,
-                msg.longitude,
-                msg.altitude,
-                ned_origin[0],  # NED origin
-                ned_origin[1],  # NED origin
-                ned_origin[2],  # NED origin
-                ell=pm.Ellipsoid("wgs84"),
-                deg=True,
+            msg.latitude,
+            msg.longitude,
+            msg.altitude,
+            ned_origin[0],  # NED origin
+            ned_origin[1],  # NED origin
+            ned_origin[2],  # NED origin
+            ell=pm.Ellipsoid("wgs84"),
+            deg=True,
         )
         #print("NED Origin",np.array([n, e, d]))
         return np.array([n, e, d])
 
     def generate_initialization_gnss_imu(self):
-        start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
-        end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        start_time = rospy.Time(self.bag.get_start_time(
+        ) + self.dataset_settings.bag_start_time_offset - 10)
+        end_time = rospy.Time(self.bag.get_start_time(
+        ) + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
         topics = ["/sentiboard/adis", "/ublox1/fix"]
         for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
             yield generate_measurement(topic, msg, t)
@@ -70,7 +73,7 @@ class ROSData:
         return rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.dataset_settings.bag_duration)
 
     @staticmethod
-    def select_dataset(id : int):
+    def select_dataset(id: int):
         if id == 1:
             return DatasetSettings_Trondheim1()
         elif id == 3:
@@ -81,23 +84,22 @@ class ROSData:
 
 class RosDataTrilateration:
 
-
-    #TODO: Sørg for at UWB starter på rett sted
+    # TODO: Sørg for at UWB starter på rett sted
 
     def __init__(self, dataset_number: int) -> None:
-        print("Initialize ROS dataset number ",dataset_number,".\n",end="")
-        
+        print("Initialize ROS dataset number ", dataset_number, ".\n", end="")
+
         # Initializes the dataset settings
-        self.dataset_settings = RosDataTrilateration.select_dataset(dataset_number)
+        self.dataset_settings = RosDataTrilateration.select_dataset(
+            dataset_number)
 
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
+        self.bag_start_time = rospy.Time(
+            self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
-        print("Starttime",self.bag_start_time)
-
-
+        print("Starttime", self.bag_start_time)
 
     def extract_initial_pose(self):
         for _, msg, t in self.bag.read_messages(topics=["/ublox1/fix"], start_time=self.bag_start_time):
@@ -117,14 +119,14 @@ class RosDataTrilateration:
     def convert_GNSS_to_NED(self, msg):
         ned_origin = self.extract_ned_origin()
         n, e, d = pm.geodetic2ned(
-                msg.latitude,
-                msg.longitude,
-                msg.altitude,
-                ned_origin[0],  # NED origin
-                ned_origin[1],  # NED origin
-                ned_origin[2],  # NED origin
-                ell=pm.Ellipsoid("wgs84"),
-                deg=True,
+            msg.latitude,
+            msg.longitude,
+            msg.altitude,
+            ned_origin[0],  # NED origin
+            ned_origin[1],  # NED origin
+            ned_origin[2],  # NED origin
+            ell=pm.Ellipsoid("wgs84"),
+            deg=True,
         )
         return np.array([n, e, d])
 
@@ -134,12 +136,12 @@ class RosDataTrilateration:
         return rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.dataset_settings.bag_duration)
 
     def generate_trilateration_combo_measurements(self):
-
         """
             Sjekke hvem som har størst tidssteg
             Returnere den som har minst
         """
-        tri_generator = self.skip_to_right_time_step(self.generate_trilateration_measurement())
+        tri_generator = self.skip_to_right_time_step(
+            self.generate_trilateration_measurement())
         imu_generator = self.generate_measurements()
 
         tri_meas = next(tri_generator)
@@ -165,17 +167,18 @@ class RosDataTrilateration:
         for topic, msg, t in self.bag.read_messages(topics=self.dataset_settings.enabled_topics, start_time=self.bag_start_time, end_time=self.bag_end_time):
             yield generate_measurement(topic, msg, t)
 
-
     def extract_trilateration_measurements(self):
-        trilateration_data = scipy.io.loadmat(self.dataset_settings.trilateration_filepath())
+        trilateration_data = scipy.io.loadmat(
+            self.dataset_settings.trilateration_filepath())
         x_list = trilateration_data["pos_sensor"][0][0][0][0]
         y_list = trilateration_data["pos_sensor"][0][0][1][0]
         z_list = trilateration_data["pos_sensor"][0][0][4][0]
         time_list = trilateration_data["pos_sensor"][0][0][6][0]
         list_of_measurements = []
-        
+
         for x, y, z, time in zip(x_list, y_list, z_list, time_list):
-            list_of_measurements.append(generate_measurement("uwb_trilateration", {"x": x, "y": y, "z": z}, time))
+            list_of_measurements.append(generate_measurement(
+                "uwb_trilateration", {"x": x, "y": y, "z": z}, time))
 
         return list_of_measurements
 
@@ -183,13 +186,12 @@ class RosDataTrilateration:
         measurements = self.extract_trilateration_measurements()
         for measurement in measurements:
             yield measurement
-    
+
     @staticmethod
-    def select_dataset(id : int):
+    def select_dataset(id: int):
         if id == 1:
             return DatasetSettings_Trondheim1()
         elif id == 3:
             return DatasetSettings_Trondheim3()
         else:
             return DatasetSettings_Trondheim4()
-
