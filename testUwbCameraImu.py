@@ -137,7 +137,6 @@ class CameraUwbImuFusion:
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
-        # self.time_stamps.append(self.ground_truth.time[0])
 
         # Initialize vo
         self.visual_odometry = VisualOdometry(R_init.as_matrix(), T_init)
@@ -159,7 +158,7 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 1000:
+            if iteration_number_cam > 100:
                 break
 
         plt.plot(range(len(self.visual_odometry.yaw)),
