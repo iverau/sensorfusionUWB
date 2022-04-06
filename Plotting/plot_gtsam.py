@@ -39,7 +39,7 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 def plot_position(position_estimates, ground_truth, time_steps):
     time_steps = np.array(time_steps)
-    time_steps[:] -= 10
+    #time_steps[:] -= 10
     body_pos = convert_to_body(ground_truth)
     plt.suptitle("Positions")
     plt.subplot(311)
@@ -78,7 +78,7 @@ def convert_to_body(ground_truth):
 def plot_angels(euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
 
-    time_steps[:] -= 10
+    #time_steps[:] 
     r2d = 180/np.pi
 
     plt.suptitle("Angels")

@@ -134,8 +134,8 @@ class VisualOdometry:
         # [Rwb,twb] = [Rwa,twa]*[Rab,tab] = [Rwa*Rab|twa + Rwa*tab]
 
         # Predict pose
-        self.cur_t = self.cur_t + 1 * self.cur_R.dot(self.t)
-        self.cur_R = self.cur_R.dot(self.R)
+        self.cur_t = self.cur_t + 1 * self.R.dot(self.t)
+        self.cur_R = self.R.dot(self.cur_R)
         rotation = R.from_matrix(self.cur_R)
         print(rotation.as_euler("zyx", degrees=True))
 

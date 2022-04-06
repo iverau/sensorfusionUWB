@@ -154,7 +154,7 @@ class VisualOdometry:
         self.Down = []
 
         # -90 grader rundt z, -90 grader i x
-        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]]) @ Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()
+        self.body_t_cam =  Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix() @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -246,7 +246,7 @@ class VisualOdometry:
 
             # Initial rotation and transelation set to ground truth values
             self.R = self.body_t_cam @ self.initial_rotation
-            self.t =  self.body_t_cam @  self.initial_rotation.T @ np.asarray([self.initial_position]).T
+            self.t =  self.body_t_cam @  self.initial_rotation @ np.asarray([self.initial_position]).T
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
             self.roll.append( rotation.as_euler("xyz", degrees=True)[0])
