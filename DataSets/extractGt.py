@@ -48,7 +48,7 @@ class GroundTruthEstimates:
 
         self.start_index = self.find_index_closest(
             self.time, self.datasetSettings.bag_start_time_offset)
-        self.time = self.time[self.start_index:]
+        self.time = self.time[self.start_index:] - self.time_offset
         print("Start time of ground truth:", self.time[0])
 
         self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[
@@ -76,7 +76,7 @@ class GroundTruthEstimates:
         self.gt_angels[:, 2] = self.yaw.copy()
 
     def find_index_closest(self, time_array, start_time):
-        temp_array = time_array - (time_array[0] - self.time_offset)
+        temp_array = time_array - (time_array[0])
         return (np.abs(temp_array - start_time)).argmin()
 
     def mat_file_to_dict(self):
