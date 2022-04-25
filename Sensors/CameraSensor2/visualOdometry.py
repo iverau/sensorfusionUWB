@@ -145,7 +145,7 @@ class VisualOdometry:
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 1.0
+        self.scale = 0.25
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
@@ -193,7 +193,8 @@ class VisualOdometry:
             print("Start detector")
             self.kp2, self.des2 = self.detector.detectAndCompute(
                 self.old_image, None)
-            self.kp1, self.des1 = self.detector.detectAndCompute(image, None)
+            self.kp1, self.des1 = self.detector.detectAndCompute(
+                image, None)
 
             print("Start matcher")
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
@@ -219,7 +220,7 @@ class VisualOdometry:
             print("Transformation:", R @ t, "\n")
 
             # Kinematic equations for VO in NED
-            self.t += 0.5 * R @ t
+            self.t += self.scale * R @ t
             self.R = R.dot(self.R)
 
             print("Trans etter: ", self.t)
