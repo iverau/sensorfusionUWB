@@ -2,6 +2,7 @@ from enum import Enum
 import numpy as np
 import gtsam
 import pymap3d as pm
+from PIL import ImageFile
 
 
 UWB_OFFSET = 0.85
@@ -12,6 +13,7 @@ class MeasurementType(Enum):
     IMU = "IMU"
     UWB = "UWB"
     UWB_TRI="UWB_Tri"
+    CAMERA = "Camera"
 
 class Measurement:
 
@@ -31,6 +33,8 @@ class Measurement:
             return MeasurementType.UWB_TRI
         elif topic == "/sentiboard/adis":
             return MeasurementType.IMU
+        elif topic == "/camera/image_raw/compressed":
+            return MeasurementType.CAMERA
         else:
             raise NotImplementedError
 
@@ -92,6 +96,24 @@ class IMU_Measurement(Measurement):
 
     def __repr__(self) -> str:
         return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Angular_vel={self.angular_vel}, Linear_vel={self.linear_vel}]" 
+
+class Camera_Measurement(Measurement):
+
+    def __init__(self, topic, msg, t) -> None:
+        super().__init__(topic, t)
+        self.extract_measurement(msg)
+
+    def _img_from_CompressedImage(self, msg):
+        """Convert compressed camera image to numpy array"""
+        parser = ImageFile.Parser()
+        parser.feed(msg.data)
+        res = parser.close()
+        return np.array(res)
+
+    def extract_measurement(self, msg):
+        self.format = msg.format
+        self.image = self._img_from_CompressedImage(msg)
+        self.image = self.image[:, :, ::-1]
 
 class UWB_Trilateration_Measurement(Measurement):
 
@@ -166,5 +188,7 @@ def generate_measurement(topic, msg, t):
         return UWB_Trilateration_Measurement(topic, msg, t)
     elif measurement_type == MeasurementType.GNSS:
         return GNSS_Measurement(topic, msg, t)
+    elif measurement_type == MeasurementType.CAMERA:
+        return Camera_Measurement(topic, msg, t)
     else:
         raise NotImplementedError

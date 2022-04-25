@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 class SensorConfigurations:
     UWB_IMU = ["/sentiboard/adis", "/uwb_beacons_parsed"]
     UWB_LIDAR_IMU = ["/os1_cloud_node/imu", "/uwb_beacons_parsed"]
@@ -8,18 +9,20 @@ class SensorConfigurations:
     GNSS = ["/ublox2/fix"]
     IMU_TRI = ["/sentiboard/adis"]
     IMU_LIDAR_TRI = ["/os1_cloud_node/imu"]
+    CAMERA_IMU_UWB = ["/camera/image_raw/compressed",
+                      "/sentiboard/adis", "/uwb_beacons_parsed"]
 
 
 class DatasetSettingsBase:
     #bag_start_time_offset = 0
     bag_duration = 100
-    enabled_topics = SensorConfigurations.UWB_IMU
+    enabled_topics = SensorConfigurations.CAMERA_IMU_UWB
     _filename = None
 
     def __init__(self, dataset_number: int):
         self.dataset_number = dataset_number
 
-    #IMU settings
+    # IMU settings
     imu_frequency = 250.0
 
     def ned_origin_filepath(self):
@@ -27,7 +30,7 @@ class DatasetSettingsBase:
 
     def trilateration_filepath(self):
         return Path.joinpath(Path(__file__).parent.absolute(), f"Trilateration/trondheim{self.dataset_number}/trilateration_3d.mat")
-        
+
     @property
     def filepath(self):
         return Path.joinpath(Path(__file__).parent.absolute(), self._filename)
@@ -43,16 +46,15 @@ class DatasetSettingsBase:
 class DatasetSettings_Trondheim1(DatasetSettingsBase):
     bag_start_time_offset = 930
     _filename = "trondheim1_inn.bag"
-    gt_time_offset = 18.24 
+    gt_time_offset = 18.24
     dataset_number = 1
-
 
     def __init__(self):
         super(DatasetSettings_Trondheim1, self).__init__(self.dataset_number)
 
 
 class DatasetSettings_Trondheim3(DatasetSettingsBase):
-    bag_start_time_offset = 840
+    bag_start_time_offset = 800
     _filename = "trondheim3_inn.bag"
     gt_time_offset = 18.42
     dataset_number = 3
@@ -62,12 +64,11 @@ class DatasetSettings_Trondheim3(DatasetSettingsBase):
 
 
 class DatasetSettings_Trondheim4(DatasetSettingsBase):
-    bag_start_time_offset = 840 # 840
+    bag_start_time_offset = 840  # 840
 
     _filename = "trondheim4_inn.bag"
     gt_time_offset = 18.55
     dataset_number = 4
-
 
     def __init__(self):
         super(DatasetSettings_Trondheim4, self).__init__(self.dataset_number)
