@@ -76,7 +76,7 @@ class GroundTruthEstimates:
         self.gt_angels[:, 2] = self.yaw.copy()
 
     def find_index_closest(self, time_array, start_time):
-        temp_array = time_array - (time_array[0])
+        temp_array = time_array - (time_array[0] - self.time_offset)
         return (np.abs(temp_array - start_time)).argmin()
 
     def mat_file_to_dict(self):

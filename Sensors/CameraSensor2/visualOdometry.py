@@ -227,9 +227,9 @@ class VisualOdometry:
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
 
-            self.roll.append(rotation.as_euler("xyz", degrees=True)[0])
-            self.pitch.append(rotation.as_euler("xyz", degrees=True)[1])
-            self.yaw.append(rotation.as_euler("xyz", degrees=True)[2])
+            self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
+            self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
+            self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
             self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
             self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
@@ -258,9 +258,9 @@ class VisualOdometry:
                 [self.initial_position]).T
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
-            self.roll.append(rotation.as_euler("xyz", degrees=True)[0])
-            self.pitch.append(rotation.as_euler("xyz", degrees=True)[1])
-            self.yaw.append(rotation.as_euler("xyz", degrees=True)[2])
+            self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
+            self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
+            self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
             self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
             self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])

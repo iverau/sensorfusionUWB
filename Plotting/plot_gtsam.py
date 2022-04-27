@@ -60,11 +60,13 @@ def convert_to_NED(ground_truth, position_estimates, time_steps):
     return np.array(ned_positions)
 
 
-def plot_position(position_estimates, ground_truth, time_steps):
+def plot_position(position_estimates, ground_truth, time_steps, convert_NED=False):
     time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
 
-    position_estimates = convert_to_NED(
-        ground_truth, position_estimates, time_steps)
+    if convert_NED:
+        position_estimates = convert_to_NED(
+            ground_truth, position_estimates, time_steps)
 
     plt.suptitle("Positions")
     plt.subplot(311)
@@ -104,26 +106,28 @@ def convert_to_body(ground_truth):
 
 def plot_angels(euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    #
     # time_steps[:]
     r2d = 180/np.pi
 
     plt.suptitle("Angels")
     plt.subplot(311)
-    plt.plot(time_steps,  euler_angels[:, 0])
+    plt.plot(time_steps,  r2d * euler_angels[:, 0])
     plt.plot(ground_truth.time, r2d * ground_truth.gt_angels[:, 0])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Roll [deg]")
 
     plt.subplot(312)
-    plt.plot(time_steps, euler_angels[:, 1])
+    plt.plot(time_steps, r2d * euler_angels[:, 1])
     plt.plot(ground_truth.time, r2d * ground_truth.gt_angels[:, 1])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Pitch [deg]")
 
     plt.subplot(313)
-    plt.plot(time_steps, euler_angels[:, 2])
+    plt.plot(time_steps, r2d * euler_angels[:, 2])
     plt.plot(ground_truth.time, r2d * ground_truth.gt_angels[:, 2])
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
@@ -146,6 +150,8 @@ def plot_bias(bias):
 
 
 def plot_vel(velocities, time_steps, ground_truth):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
     plt.suptitle("Velocities")
     plt.subplot(311)
     plt.plot(time_steps, velocities[:, 0])

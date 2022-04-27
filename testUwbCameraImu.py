@@ -166,7 +166,7 @@ class CameraUwbImuFusion:
         plt.title("Yaw measurements")
         plt.figure(2)
         plot_position(np.array([np.array(self.visual_odometry.North)[:, 0], np.array(self.visual_odometry.East)[
-                      :, 0], np.array(self.visual_odometry.Down)[:, 0]]).T, self.ground_truth, self.time_stamps)
+                      :, 0], np.array(self.visual_odometry.Down)[:, 0]]).T, self.ground_truth, self.time_stamps, convert_NED=True)
         plt.figure(3)
         plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(
             self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
