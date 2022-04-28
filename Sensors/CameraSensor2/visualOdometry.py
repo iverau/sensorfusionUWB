@@ -190,13 +190,11 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
 
-            print("Start detector")
             self.kp2, self.des2 = self.detector.detectAndCompute(
                 self.old_image, None)
             self.kp1, self.des1 = self.detector.detectAndCompute(
                 image, None)
 
-            print("Start matcher")
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
             imageIndexes = []
@@ -204,7 +202,6 @@ class VisualOdometry:
                 if m.distance < 0.75*n.distance:
                     imageIndexes.append([m.queryIdx, m.trainIdx])
 
-            print("Start outlier and estimate E")
             self.remove_outliers_with_ransac(imageIndexes)
             self.E = estimate_E(self.xy1, self.xy2)
 
@@ -212,18 +209,13 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = T[:3, 3]
+            t[0] = 0
             R = T[:3, :3]
             t = np.asarray([t]).T
-
-            # Transform the rotation from camera coordinates to
-            print("Trans før: ", t, "\n")
-            print("Transformation:", R @ t, "\n")
 
             # Kinematic equations for VO in NED
             self.t += self.scale * R @ t
             self.R = R.dot(self.R)
-
-            print("Trans etter: ", self.t)
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
 
@@ -234,8 +226,6 @@ class VisualOdometry:
             self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
             self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
             self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
-
-            print("Fort gjort")
 
             # Reset the variables to the new varaibles
             self.old_image = image
