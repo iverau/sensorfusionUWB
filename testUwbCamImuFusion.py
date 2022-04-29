@@ -216,7 +216,7 @@ class GtSAMTest:
     def add_vo_to_graph(self, rotation, transelation):
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(PRIOR_POSE_SIGMAS)
-        self.factor_graph.add(gtsam.BetweenFactor3D(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
+        self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -286,7 +286,7 @@ class GtSAMTest:
                     else:
                         rotation, trans = self.visual_odometry.track_odometry(measurement.image)
                         self.add_vo_to_graph(rotation, trans)
-                    self.time_stamps.append(measurement.time.to_time())
+                    # self.time_stamps.append(measurement.time.to_time())
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
@@ -309,13 +309,10 @@ class GtSAMTest:
                 # self.calculateDistancesFromUWBAncors()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
-                self.current_velocity = result.atVector(
-                    self.velocity_variables[-1])
+                self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_velocity[2] = 0
-                self.current_bias = result.atConstantBias(
-                    self.imu_bias_variables[-1])
-                self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(
-                ), self.current_pose.rotation().matrix().T @ self.current_velocity)
+                self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
+                self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:
                     break
 
