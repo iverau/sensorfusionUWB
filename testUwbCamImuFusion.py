@@ -215,7 +215,7 @@ class GtSAMTest:
 
     def add_vo_to_graph(self, rotation, transelation):
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
-        measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(PRIOR_POSE_SIGMAS)
+        measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
         self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
 
     def run(self):
@@ -286,15 +286,14 @@ class GtSAMTest:
                     else:
                         rotation, trans = self.visual_odometry.track_odometry(measurement.image)
                         self.add_vo_to_graph(rotation, trans)
-                    # self.time_stamps.append(measurement.time.to_time())
+                        self.prev_image_state = self.pose_variables[-1]
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
                 imu_measurements.append(measurement)
 
             iteration_number += 1
-            print("Iteration", iteration_number, len(
-                self.pose_variables), len(self.time_stamps))
+            print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 3:
@@ -305,8 +304,6 @@ class GtSAMTest:
 
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
-
-                # self.calculateDistancesFromUWBAncors()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
