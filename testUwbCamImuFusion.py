@@ -214,6 +214,9 @@ class GtSAMTest:
             print("Pose of anchor:", uwb_position.position(), "\n")
 
     def add_vo_to_graph(self, rotation, transelation):
+        transelation = self.current_pose.rotation().matrix() @ transelation
+        transelation[2] = 0
+
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
         self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))

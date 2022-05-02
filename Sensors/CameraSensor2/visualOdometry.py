@@ -212,9 +212,14 @@ class VisualOdometry:
             R = T[:3, :3]
             t = np.asarray([t]).T
 
+            prev_rot = Rot.from_matrix(self.body_t_cam.T @ R)
             # BODY equations
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
-            transelation = self.scale * R @ t
+            rotation = Rot.from_matrix(R)
+            print("Pre rot:", prev_rot.as_euler("xyz", degrees=True))
+            rotation = Rot.from_euler("xyz", np.array([rotation.as_euler("xyz")[2], rotation.as_euler("xyz")[0], rotation.as_euler("xyz")[1]]))
+            print("Post rot:", rotation.as_euler("xyz", degrees=True))
+
+            transelation = self.scale * self.body_t_cam.T @ R @ t
 
             # Reset the variables to the new varaibles
             self.old_image = image
