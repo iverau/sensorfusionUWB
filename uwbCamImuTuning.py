@@ -21,7 +21,7 @@ POSE_SIGMAS = np.array([0.000175, 0.000175, 0.01, 1, 1, 0.001])
 # pre-integration parameters can be found in the file Sensors/Imu.py
 
 # VO tuning
-VO_SIGMAS = np.array([1e-2, 1e-2, 1e1, 1e-1, 1e-1, 1e-5])  # rx, ry, rz, x, y, z
+VO_SIGMAS = np.array([1e-1, 1e-1, 1e1, 1e0, 1e0, 1e-3])  # rx, ry, rz, x, y, z
 
 # GNSS tuning
 GNSS_PREINIT_ENABLED = True

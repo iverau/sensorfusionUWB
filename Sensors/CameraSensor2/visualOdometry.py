@@ -161,8 +161,7 @@ class VisualOdometry:
         self.Down = []
 
         # -90 grader rundt z, -90 grader i x
-        self.body_t_cam = Rot.from_euler(
-            'xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
