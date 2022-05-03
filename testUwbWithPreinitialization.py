@@ -153,15 +153,13 @@ class GtSAMTest:
             )
         )
 
-        self.navstate = integrated_measurement.predict(
-            self.navstate, self.current_bias)
+        self.navstate = integrated_measurement.predict(self.navstate, self.current_bias)
         velocityNED = self.navstate.pose().rotation().matrix() @ self.navstate.velocity()
         velocityNED[2] = 0
 
         self.graph_values.insert(self.pose_variables[-1], self.navstate.pose())
         self.graph_values.insert(self.velocity_variables[-1], velocityNED)
-        self.graph_values.insert(
-            self.imu_bias_variables[-1], self.current_bias)
+        self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
         self.factor_graph.add(gtsam.PriorFactorVector(
             self.velocity_variables[-1], velocityNED, gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*VELOCITY_SIGMAS)))

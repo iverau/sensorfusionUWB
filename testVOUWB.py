@@ -16,7 +16,7 @@ from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_
 import seaborn as sns
 from Sensors.CameraSensor2.visualOdometry import VisualOdometry
 
-from uwbCamImuTuning import *
+from voUWBTuning import *
 
 
 class GtSAMTest:
@@ -124,49 +124,6 @@ class GtSAMTest:
 
         return summarized_measurement
 
-    def add_imu_factor(self, integrated_measurement, imu_measurements):
-        # Create new state variables
-        self.pose_variables.append(X(len(self.pose_variables)))
-        self.velocity_variables.append(V(len(self.velocity_variables)))
-        self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
-
-        # Add the new factors to the graph
-        self.factor_graph.add(gtsam.ImuFactor(
-            self.pose_variables[-2],
-            self.velocity_variables[-2],
-            self.pose_variables[-1],
-            self.velocity_variables[-1],
-            self.imu_bias_variables[-2],
-            integrated_measurement
-        ))
-
-        self.factor_graph.add(
-            gtsam.BetweenFactorConstantBias(
-                self.imu_bias_variables[-2],
-                self.imu_bias_variables[-1],
-                self.current_bias,
-                gtsam.noiseModel.Diagonal.Sigmas(
-                    np.sqrt(len(imu_measurements)) * self.imu_params.sigmaBetweenBias)
-            )
-        )
-
-        self.navstate = integrated_measurement.predict(
-            self.navstate, self.current_bias)
-        velocityNED = self.navstate.pose().rotation().matrix() @ self.navstate.velocity()
-        velocityNED[2] = 0
-
-        self.graph_values.insert(self.pose_variables[-1], self.navstate.pose())
-        self.graph_values.insert(self.velocity_variables[-1], velocityNED)
-        self.graph_values.insert(
-            self.imu_bias_variables[-1], self.current_bias)
-
-        self.factor_graph.add(gtsam.PriorFactorVector(
-            self.velocity_variables[-1], velocityNED, gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*VELOCITY_SIGMAS)))
-        self.factor_graph.add(gtsam.PriorFactorConstantBias(
-            self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
-        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.navstate.pose(
-        ), gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements))*POSE_SIGMAS)))
-
     def add_imu_factor_gnss(self, integrated_measurement, imu_measurements):
         # Create new state variables
         self.pose_variables.append(X(len(self.pose_variables)))
@@ -205,6 +162,11 @@ class GtSAMTest:
             self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
         return pose
 
+    def integrate_current_state_euler(self, rotation, transelation):
+        rot = rotation @ self.integrating_state.rotation().matrix()
+        t = self.integrating_state.translation()
+        self.integrating_state = gtsam.Pose3(gtsam.Rot3(rot), t.flatten())
+
     def calculateDistancesFromUWBAncors(self):
         for key, uwb_position in self.uwb_positions.UWB_position_map.items():
             delta = np.linalg.norm(
@@ -214,10 +176,20 @@ class GtSAMTest:
             print("Pose of anchor:", uwb_position.position(), "\n")
 
     def add_vo_to_graph(self, rotation, transelation):
+        self.pose_variables.append(X(len(self.pose_variables)))
+        self.velocity_variables.append(V(len(self.velocity_variables)))
+        self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
+
         transelation = self.current_pose.rotation().matrix() @ transelation
         transelation[2] = 0
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
+
+        self.integrate_current_state_euler(rotation, transelation)
+
+        self.graph_values.insert(self.pose_variables[-1], self.integrating_state)
+        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.integrating_state, gtsam.noiseModel.Diagonal.Sigmas(POSE_SIGMAS)))
+
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
         self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
 
@@ -264,38 +236,26 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.visual_odometry = VisualOdometry(
-            self.current_pose.rotation().matrix(), self.current_pose.translation())
+        self.integrating_state = result.atPose3(self.pose_variables[-1])
+        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation())
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
-            """
-            if measurement.measurement_type.value != "IMU":
-                if imu_measurements:
+            # TODO lage nye states ved hver camera måling
+
+            if measurement.measurement_type.value == "UWB":
+                self.add_UWB_to_graph(measurement)
+
+            if measurement.measurement_type.value == "Camera":
+
+                if self.prev_image_state is None:
+                    self.visual_odometry.track_odometry(measurement.image)
+                    self.prev_image_state = self.pose_variables[-1]
+                else:
+                    rotation, trans = self.visual_odometry.track_odometry(measurement.image)
+                    self.add_vo_to_graph(rotation, trans)
                     self.time_stamps.append(measurement.time.to_time())
-                    integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
-                    self.add_imu_factor(integrated_measurement, imu_measurements)
-
-                    # Reset the IMU measurement list
-                    imu_measurements = []
-                    self.isam.update()
-
-                if measurement.measurement_type.value == "UWB":
-                    self.add_UWB_to_graph(measurement)
-
-                if measurement.measurement_type.value == "Camera":
-                    if self.prev_image_state is None:
-                        self.visual_odometry.track_odometry(measurement.image)
-                        self.prev_image_state = self.pose_variables[-1]
-                    else:
-                        rotation, trans = self.visual_odometry.track_odometry(measurement.image)
-                        self.add_vo_to_graph(rotation, trans)
-                        self.prev_image_state = self.pose_variables[-1]
-
-            elif measurement.measurement_type.value == "IMU":
-                # Store the IMU factors unntil a new UWB measurement is recieved
-                imu_measurements.append(measurement)
-            """
+                    self.prev_image_state = self.pose_variables[-1]
             iteration_number += 1
             print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
@@ -310,10 +270,7 @@ class GtSAMTest:
                 self.reset_pose_graph_variables()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
-                self.current_velocity = result.atVector(self.velocity_variables[-1])
-                self.current_velocity[2] = 0
-                self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
-                self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
+                self.integrating_state = result.atPose3(self.pose_variables[-1])
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:
                     break
 
@@ -324,18 +281,13 @@ class GtSAMTest:
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
 
         print("\n-- Plot pose")
-        # plt.figure(1)
+        plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
             result, self.landmarks_variables.values()), self.ground_truth)
         plt.figure(2)
         plot_position(positions, self.ground_truth, self.time_stamps)
         plt.figure(3)
         plot_angels(eulers, self.ground_truth, self.time_stamps)
-        plt.figure(4)
-        plot_bias(biases)
-        plt.figure(5)
-        plot_vel(gtsam_velocity_from_results(
-            result, self.velocity_variables), self.time_stamps, self.ground_truth)
         plt.show()
 
 
