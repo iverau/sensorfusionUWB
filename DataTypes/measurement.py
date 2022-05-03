@@ -8,12 +8,14 @@ from PIL import ImageFile
 UWB_OFFSET = 0.85
 UWB_STD = 0.2
 
+
 class MeasurementType(Enum):
     GNSS = "GNSS"
     IMU = "IMU"
     UWB = "UWB"
-    UWB_TRI="UWB_Tri"
+    UWB_TRI = "UWB_Tri"
     CAMERA = "Camera"
+
 
 class Measurement:
 
@@ -27,7 +29,7 @@ class Measurement:
             return MeasurementType.IMU
         elif topic == "/uwb_beacons_parsed":
             return MeasurementType.UWB
-        elif topic == "/ublox1/fix":
+        elif topic == "/ublox1/fix" or topic == "/ublox2/fix":
             return MeasurementType.GNSS
         elif topic == "uwb_trilateration":
             return MeasurementType.UWB_TRI
@@ -38,17 +40,14 @@ class Measurement:
         else:
             raise NotImplementedError
 
-
-
     def __repr__(self) -> str:
         if self.measurement_type == MeasurementType.UWB:
-            return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]" 
+            return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]"
 
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]"
 
 
 class UWB_Measurement(Measurement):
-
 
     def __init__(self, topic, msg, t) -> None:
         super().__init__(topic, t)
@@ -60,7 +59,8 @@ class UWB_Measurement(Measurement):
         self.id = msg.SRC
 
     def __repr__(self) -> str:
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Range={self.range}, Id={self.id}]"
+
 
 class IMU_Measurement(Measurement):
 
@@ -75,8 +75,6 @@ class IMU_Measurement(Measurement):
     def __init__(self, topic, msg, t) -> None:
         super().__init__(topic, t)
         self.extract_measurement_data(msg)
-        
-
 
     def imu_to_body(self, data):
         return self.R_IMU_BODY @ data
@@ -90,12 +88,12 @@ class IMU_Measurement(Measurement):
         self.linear_vel_covariance = np.diag([0.1, 0.1, 0.001])
         self.angular_vel_covariance = np.diag([0.00175, 0.00175, 0.001])
 
-
     def variance_vector(self):
-        return np.array([self.angular_vel_covariance[0,0], self.angular_vel_covariance[1,1], self.angular_vel_covariance[2,2], self.linear_vel_covariance[0,0], self.linear_vel_covariance[1,1], self.linear_vel_covariance[2,2]])
+        return np.array([self.angular_vel_covariance[0, 0], self.angular_vel_covariance[1, 1], self.angular_vel_covariance[2, 2], self.linear_vel_covariance[0, 0], self.linear_vel_covariance[1, 1], self.linear_vel_covariance[2, 2]])
 
     def __repr__(self) -> str:
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Angular_vel={self.angular_vel}, Linear_vel={self.linear_vel}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, Angular_vel={self.angular_vel}, Linear_vel={self.linear_vel}]"
+
 
 class Camera_Measurement(Measurement):
 
@@ -114,6 +112,7 @@ class Camera_Measurement(Measurement):
         self.format = msg.format
         self.image = self._img_from_CompressedImage(msg)
         self.image = self.image[:, :, ::-1]
+
 
 class UWB_Trilateration_Measurement(Measurement):
 
@@ -134,7 +133,7 @@ class UWB_Trilateration_Measurement(Measurement):
         self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1.0 / self.covX ** 2, 1.0 / self.covY ** 2, 1.0 / self.covZ ** 2]))
 
     def __repr__(self) -> str:
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]"
 
 
 class GNSS_Measurement(Measurement):
@@ -146,18 +145,17 @@ class GNSS_Measurement(Measurement):
     def convert_GNSS_to_NED(self, msg):
         ned_origin = [63.43888731, 10.39601287, 41.59585029]
         n, e, d = pm.geodetic2ned(
-                msg.latitude,
-                msg.longitude,
-                msg.altitude,
-                ned_origin[0],  # NED origin
-                ned_origin[1],  # NED origin
-                ned_origin[2],  # NED origin
-                ell=pm.Ellipsoid("wgs84"),
-                deg=True,
+            msg.latitude,
+            msg.longitude,
+            msg.altitude,
+            ned_origin[0],  # NED origin
+            ned_origin[1],  # NED origin
+            ned_origin[2],  # NED origin
+            ell=pm.Ellipsoid("wgs84"),
+            deg=True,
         )
         #print("NED Origin",np.array([n, e, d]))
         return np.array([n, e, d])
-
 
     def extract_measurement(self, msg):
         # TODO: Finne ut av rekkefølgen på ting her :)
@@ -175,11 +173,11 @@ class GNSS_Measurement(Measurement):
         self.noise_model = gtsam.noiseModel.Diagonal.Precisions(np.array([0.0, 0.0, 0.0, 1e-8, 1e-8, 1e-8]))
 
     def __repr__(self) -> str:
-        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]" 
+        return f"Measurement[Type={self.measurement_type.value}, Time={self.time}, X={self.x}, Y={self.y}, Z={self.z}]"
 
 
 def generate_measurement(topic, msg, t):
-    measurement_type =  Measurement.select_measurement_type(topic)
+    measurement_type = Measurement.select_measurement_type(topic)
     if measurement_type == MeasurementType.UWB:
         return UWB_Measurement(topic, msg, t)
     elif measurement_type == MeasurementType.IMU:

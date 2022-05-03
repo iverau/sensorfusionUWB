@@ -9,8 +9,7 @@ class SensorConfigurations:
     GNSS = ["/ublox2/fix"]
     IMU_TRI = ["/sentiboard/adis"]
     IMU_LIDAR_TRI = ["/os1_cloud_node/imu"]
-    CAMERA_IMU_UWB = ["/camera/image_raw/compressed",
-                      "/sentiboard/adis", "/uwb_beacons_parsed"]
+    CAMERA_IMU_UWB = ["/camera/image_raw/compressed", "/sentiboard/adis", "/uwb_beacons_parsed", "/ublox2/fix"]
 
 
 class DatasetSettingsBase:
