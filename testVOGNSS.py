@@ -16,7 +16,7 @@ from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_
 import seaborn as sns
 from Sensors.CameraSensor2.visualOdometry import VisualOdometry
 
-from voUWBTuning import *
+from voGNSSTuning import *
 
 
 class GtSAMTest:
@@ -187,7 +187,7 @@ class GtSAMTest:
 
         self.integrate_current_state_euler(rotation, transelation)
 
-        #self.graph_values.insert(self.pose_variables[-1], self.integrating_state)
+        self.graph_values.insert(self.pose_variables[-1], self.integrating_state)
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.integrating_state, gtsam.noiseModel.Diagonal.Sigmas(POSE_SIGMAS)))
 
         measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
@@ -245,8 +245,9 @@ class GtSAMTest:
 
             if measurement.measurement_type.value == "GNSS":
                 gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
-                self.graph_values.insert(self.pose_variables[-1], gnss_pose)
+                #self.factor_graph.add(self.pose_variables[-1], gnss_pose)
                 gnss_counter += 1
+                print("GNSS Mea")
 
             if measurement.measurement_type.value == "Camera":
 
@@ -260,13 +261,11 @@ class GtSAMTest:
                     self.prev_image_state = self.pose_variables[-1]
 
             iteration_number += 1
-            print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
-
-            iteration_number += 1
-            print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
+            #print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
             # Update ISAM with graph and initial_values
             if gnss_counter == 2:
+                print("Lets go")
 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
