@@ -59,7 +59,7 @@ class ROSData:
         ) + self.dataset_settings.bag_start_time_offset - 10)
         end_time = rospy.Time(self.bag.get_start_time(
         ) + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
-        topics = ["/sentiboard/adis", "/ublox1/fix"]
+        topics = ["/sentiboard/adis", "/ublox2/fix"]
         for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
             yield generate_measurement(topic, msg, t)
 
@@ -102,7 +102,7 @@ class RosDataTrilateration:
         print("Starttime", self.bag_start_time)
 
     def extract_initial_pose(self):
-        for _, msg, t in self.bag.read_messages(topics=["/ublox1/fix"], start_time=self.bag_start_time):
+        for _, msg, t in self.bag.read_messages(topics=["/ublox2/fix"], start_time=self.bag_start_time):
             data = msg
             time = t
             break

@@ -136,6 +136,7 @@ def SE3(R, t):
 class VisualOdometry:
 
     def __init__(self, rot_init, t_init, noise_values=0) -> None:
+        self.noise_values_init = noise_values
         self.noise_values = noise_values
         self.camera = PinholeCamera()
         self.detector = cv2.ORB_create(2000, 1.2, 8)
@@ -210,7 +211,7 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = T[:3, 3]
-            t[0] = 0
+            #t[0] = 0
             R = T[:3, :3]
             t = np.asarray([t]).T
 
@@ -232,67 +233,9 @@ class VisualOdometry:
                 image, keypoints, None, color=(0, 255, 0), flags=0)
             cv2.imshow("Frame", new_img)
             cv2.waitKey(1)
-            self.noise_values = self.noise_counter * self.noise_values
+            self.noise_values = self.noise_counter * self.noise_values_init
             self.noise_counter += 1
             return rotation, self.body_t_cam.T @ self.t.copy()
-
-        else:
-            # Case for first image
-            self.old_image = image
-            self.old_points = self.detect(image)
-
-            # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam @ self.initial_rotation
-            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray(
-                [self.initial_position]).T
-
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
-
-    def track_odometry(self, image):
-        image = np.array(image)
-        # Track stuff
-        if self.old_image is not None:
-
-            self.kp2, self.des2 = self.detector.detectAndCompute(
-                self.old_image, None)
-            self.kp1, self.des1 = self.detector.detectAndCompute(
-                image, None)
-
-            matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
-
-            imageIndexes = []
-            for m, n in matches:
-                if m.distance < 0.75*n.distance:
-                    imageIndexes.append([m.queryIdx, m.trainIdx])
-
-            self.remove_outliers_with_ransac(imageIndexes)
-            self.E = estimate_E(self.xy1, self.xy2)
-
-            # Start extrating T
-            self.X, T = self.get_best_point_corespondence()
-
-            t = T[:3, 3]
-            R = T[:3, :3]
-            t = np.asarray([t]).T
-
-            prev_rot = Rot.from_matrix(self.body_t_cam.T @ R)
-            # BODY equations
-            rotation = Rot.from_matrix(R)
-            rotation = Rot.from_euler("xyz", np.array([rotation.as_euler("xyz")[2], rotation.as_euler("xyz")[0], rotation.as_euler("xyz")[1]]))
-
-            transelation = self.scale * self.body_t_cam.T @ R @ t
-
-            # Reset the variables to the new varaibles
-            self.old_image = image
-
-            keypoints = self.detector.detect(image, None)
-            keypoints, descriptors = self.detector.compute(image, keypoints)
-            new_img = cv2.drawKeypoints(
-                image, keypoints, None, color=(0, 255, 0), flags=0)
-            cv2.imshow("Frame", new_img)
-            cv2.waitKey(1)
-
-            return rotation.as_matrix(), transelation
 
         else:
             # Case for first image

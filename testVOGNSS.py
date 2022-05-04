@@ -69,8 +69,7 @@ class GtSAMTest:
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
 
         self.current_velocity = self.ground_truth.initial_velocity()
-        self.current_bias = gtsam.imuBias.ConstantBias(
-            np.zeros((3,)), BIAS_INITIAL_VALUE)
+        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), BIAS_INITIAL_VALUE)
         self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(), self.current_pose.rotation().matrix().T @ self.current_velocity)
 
         self.factor_graph.add(gtsam.PriorFactorPose3(
@@ -85,27 +84,6 @@ class GtSAMTest:
         self.graph_values.insert(B1, self.current_bias)
         self.time_stamps.append(self.ground_truth.time[0])
         self.prev_image_state = None
-
-    def add_UWB_to_graph(self, uwb_measurement):
-
-        landmark = self.get_UWB_landmark(uwb_measurement)
-        measurement_noise = gtsam.noiseModel.Isotropic.Sigma(1, UWB_NOISE)
-        self.factor_graph.add(gtsam.RangeFactor3D(self.pose_variables[-1], landmark, uwb_measurement.range, measurement_noise))
-
-    def get_UWB_landmark(self, uwb_measurement):
-        self.uwb_counter.add(uwb_measurement.id)
-        if uwb_measurement.id not in self.landmarks_variables.keys():
-            self.landmarks_variables[uwb_measurement.id] = L(
-                len(self.landmarks_variables.keys()))
-            position = self.uwb_positions[uwb_measurement.id].position()
-
-            # Creates an initial estimate of the landmark pose
-            self.graph_values.insert(
-                self.landmarks_variables[uwb_measurement.id], position)
-            self.factor_graph.add(gtsam.PriorFactorVector(
-                self.landmarks_variables[uwb_measurement.id], position, gtsam.noiseModel.Isotropic.Sigma(3, UWB_PRIOR_POSITIONING_NOISE)))
-
-        return self.landmarks_variables[uwb_measurement.id]
 
     def reset_pose_graph_variables(self):
         self.graph_values = gtsam.Values()
@@ -158,22 +136,16 @@ class GtSAMTest:
             self.current_pose.rotation().matrix() @ self.gnss_params.T_in_body()
         position[2] = 0
         pose = gtsam.Pose3(self.navstate.pose().rotation(), position)
-        factor_graph.add(gtsam.PriorFactorPose3(
-            self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
+        factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE)))
         return pose
 
-    def integrate_current_state_euler(self, rotation, transelation):
-        rot = rotation @ self.integrating_state.rotation().matrix()
-        t = self.integrating_state.translation()
-        self.integrating_state = gtsam.Pose3(gtsam.Rot3(rot), t.flatten())
-
-    def calculateDistancesFromUWBAncors(self):
-        for key, uwb_position in self.uwb_positions.UWB_position_map.items():
-            delta = np.linalg.norm(
-                uwb_position.position() - self.current_pose.translation())
-            print(f"Distance from {key} is {delta} meters.")
-            print("Pose of vessel:", self.current_pose.translation())
-            print("Pose of anchor:", uwb_position.position(), "\n")
+    def add_GNSS_to_graph2(self, factor_graph, measurement):
+        position = measurement.position - \
+            self.current_pose.rotation().matrix() @ self.gnss_params.T_in_body()
+        position[2] = 0
+        pose = gtsam.Pose3(gtsam.Rot3(self.current_pose.rotation().matrix()), position)
+        factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(GNSS_NOISE_RUNNING)))
+        return pose
 
     def add_vo_to_graph(self, rotation, transelation):
         self.pose_variables.append(X(len(self.pose_variables)))
@@ -184,14 +156,8 @@ class GtSAMTest:
         transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
-
-        self.integrate_current_state_euler(rotation, transelation)
-
         self.graph_values.insert(self.pose_variables[-1], pose)
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
-
-        #measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
-        #self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -236,18 +202,13 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.integrating_state = result.atPose3(self.pose_variables[-1])
         self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
-            # TODO lage nye states ved hver camera måling
-
             if measurement.measurement_type.value == "GNSS":
-                gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
-                #self.factor_graph.add(self.pose_variables[-1], gnss_pose)
+                gnss_pose = self.add_GNSS_to_graph2(self.factor_graph, measurement)
                 gnss_counter += 1
-                print("GNSS Mea")
 
             if measurement.measurement_type.value == "Camera":
 
@@ -265,7 +226,6 @@ class GtSAMTest:
 
             # Update ISAM with graph and initial_values
             if gnss_counter == 1:
-                print("Lets go")
 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
@@ -275,7 +235,6 @@ class GtSAMTest:
                 self.reset_pose_graph_variables()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
-                self.integrating_state = result.atPose3(self.pose_variables[-1])
                 self.visual_odometry.reset_initial_conditions(self.current_pose.rotation().matrix(), self.current_pose.translation())
 
                 gnss_counter = 0

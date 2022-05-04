@@ -29,7 +29,7 @@ class Measurement:
             return MeasurementType.IMU
         elif topic == "/uwb_beacons_parsed":
             return MeasurementType.UWB
-        elif topic == "/ublox1/fix" or topic == "/ublox2/fix":
+        elif topic == "/ublox2/fix":
             return MeasurementType.GNSS
         elif topic == "uwb_trilateration":
             return MeasurementType.UWB_TRI
