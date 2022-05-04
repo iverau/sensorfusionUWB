@@ -143,7 +143,7 @@ class VisualOdometry:
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 0.3
+        self.scale = 0.5
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
@@ -192,10 +192,8 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
 
-            self.kp2, self.des2 = self.detector.detectAndCompute(
-                self.old_image, None)
-            self.kp1, self.des1 = self.detector.detectAndCompute(
-                image, None)
+            self.kp1, self.des1 = self.detector.detectAndCompute(self.old_image, None)
+            self.kp2, self.des2 = self.detector.detectAndCompute(image, None)
 
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
@@ -216,7 +214,7 @@ class VisualOdometry:
             t = np.asarray([t]).T
 
             # Kinematic equations for VO in NED
-            self.t += self.scale * R @ t
+            self.t += self.scale * self.R @ t
             self.R = R.dot(self.R)
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
@@ -254,10 +252,8 @@ class VisualOdometry:
         # Track stuff
         if self.old_image is not None:
 
-            self.kp2, self.des2 = self.detector.detectAndCompute(
-                self.old_image, None)
-            self.kp1, self.des1 = self.detector.detectAndCompute(
-                image, None)
+            self.kp1, self.des1 = self.detector.detectAndCompute(self.old_image, None)
+            self.kp2, self.des2 = self.detector.detectAndCompute(image, None)
 
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
@@ -278,9 +274,11 @@ class VisualOdometry:
             t = np.asarray([t]).T
 
             # Kinematic equations for VO in NED
-            self.t += self.scale * R @ t
-            self.R = R.dot(self.R)
+            self.t = self.scale * self.R @ t + self.t
+            self.R = R @ self.R
 
+            rotation = Rot.from_matrix(self.R).as_euler("xyz")
+            #self.R = Rot.from_euler("xyz", [0, rotation[1], 0]).as_matrix()
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
 
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
@@ -308,8 +306,7 @@ class VisualOdometry:
 
             # Initial rotation and transelation set to ground truth values
             self.R = self.body_t_cam @ self.initial_rotation
-            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray(
-                [self.initial_position]).T
+            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray([self.initial_position]).T
 
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
