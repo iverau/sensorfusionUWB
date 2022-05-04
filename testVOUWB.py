@@ -183,7 +183,7 @@ class GtSAMTest:
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
         transelation = self.current_pose.rotation().matrix().T @ transelation
-        transelation[2] = 0
+        transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
 
@@ -250,13 +250,10 @@ class GtSAMTest:
 
                 if self.prev_image_state is None:
                     self.visual_odometry.track_odometry2(measurement.image)
-                    self.prev_image_state = self.pose_variables[-1]
                 else:
                     rotation, trans = self.visual_odometry.track_odometry2(measurement.image)
-                    #trans = self.current_pose.rotation().matrix() @ trans
                     self.add_vo_to_graph(rotation, trans)
                     self.time_stamps.append(measurement.time.to_time())
-                    self.prev_image_state = self.pose_variables[-1]
             iteration_number += 1
             print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
@@ -279,8 +276,6 @@ class GtSAMTest:
         self.isam.update(self.factor_graph, self.graph_values)
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
-
-        biases = gtsam_bias_from_results(result, self.imu_bias_variables)
 
         print("\n-- Plot pose")
         plt.figure(1)

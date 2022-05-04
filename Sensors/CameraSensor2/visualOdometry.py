@@ -36,8 +36,6 @@ def estimate_E_ransac(xy1, xy2, K, distance_threshold, num_trials):
     uv1 = K@xy1
     uv2 = K@xy2
 
-    print('Running RANSAC with %g inlier threshold and %d trials...' %
-          (distance_threshold, num_trials), end='')
     best_num_inliers = -1
     for i in range(num_trials):
         sample = np.random.choice(xy1.shape[1], size=8, replace=False)
@@ -49,9 +47,7 @@ def estimate_E_ransac(xy1, xy2, K, distance_threshold, num_trials):
             best_num_inliers = num_inliers_i
             E = E_i
             inliers = inliers_i
-    print('Done!')
-    print('Found solution with %d/%d inliers' %
-          (np.sum(inliers), xy1.shape[1]))
+
     return E, inliers
 
 
@@ -142,7 +138,7 @@ class VisualOdometry:
     def __init__(self, rot_init, t_init, noise_values=0) -> None:
         self.noise_values = noise_values
         self.camera = PinholeCamera()
-        self.detector = cv2.ORB_create(1000, 1.2, 8)
+        self.detector = cv2.ORB_create(2000, 1.2, 8)
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
@@ -162,7 +158,7 @@ class VisualOdometry:
         self.Down = []
         self.noise_counter = 1
         # -90 grader rundt z, -90 grader i x
-        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -225,6 +221,7 @@ class VisualOdometry:
             rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
             #rotation = Rot.from_matrix(rotation)
             rotation = rotation.as_euler("xyz")
+            print("ROtation:", Rot.from_euler("xyz", [0, 0, rotation[2]]).as_euler("xyz"))
             rotation = Rot.from_euler("xyz", [0, 0, rotation[2]]).as_matrix()
             # Reset the variables to the new varaibles
             self.old_image = image
@@ -281,9 +278,7 @@ class VisualOdometry:
             prev_rot = Rot.from_matrix(self.body_t_cam.T @ R)
             # BODY equations
             rotation = Rot.from_matrix(R)
-            print("Pre rot:", prev_rot.as_euler("xyz", degrees=True))
             rotation = Rot.from_euler("xyz", np.array([rotation.as_euler("xyz")[2], rotation.as_euler("xyz")[0], rotation.as_euler("xyz")[1]]))
-            print("Post rot:", rotation.as_euler("xyz", degrees=True))
 
             transelation = self.scale * self.body_t_cam.T @ R @ t
 
@@ -381,8 +376,6 @@ class VisualOdometry:
             self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
             self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
             self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
-            print("Intiial things", self.t)
-            print("Intiial things", self.R)
 
     def update_scale(self):
         # Update the scale parameter
