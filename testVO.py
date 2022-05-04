@@ -19,45 +19,6 @@ from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_
 
 import matplotlib.pyplot as plt
 
-import math
-
-
-draw_scale = 1
-traj_img_size = 800
-traj_img = np.zeros((traj_img_size, traj_img_size, 3), dtype=np.uint8)
-
-
-def draw_trajectory_2D(x_est, y_est, z_est, x_gt, y_gt, z_gt):
-    half_traj_img_size = int(0.5 * traj_img_size)
-
-    draw_x, draw_y = (
-        int(draw_scale * x_est) + half_traj_img_size,
-        half_traj_img_size - int(draw_scale * z_est),
-    )
-    # true_x, true_y = (
-    #    int(draw_scale * x_gt) + half_traj_img_size,
-    #    half_traj_img_size - int(draw_scale * z_gt),
-    # )
-    cv2.circle(traj_img, (draw_x, draw_y), 1, (0, 255, 0), 1)
-    #cv2.circle(traj_img, (true_x, true_y), 1, (0, 0, 255), 1)
-
-    # write text on traj_img
-    cv2.rectangle(traj_img, (10, 20), (600, 60), (0, 0, 0), -1)
-    text = "Coordinates: x=%2fm y=%2fm z=%2fm" % (x_est, y_est, z_est)
-    cv2.putText(
-        traj_img, text, (20, 40), cv2.FONT_HERSHEY_PLAIN, 1, (255,
-                                                              255, 255), 1, 8
-    )
-    cv2.imshow("Trajectory", traj_img)
-
-
-def imshow_inloop(image, title="Camera"):
-    #img_show = cv2.resize(image, (1920, 1200))
-    cv2.imshow(title, image)
-    # Press 'q' to exit!
-    if cv2.waitKey(1) & 0xFF == ord("q"):
-        exit()
-
 
 class CameraUwbImuFusion:
 
@@ -70,7 +31,7 @@ class CameraUwbImuFusion:
         self.uwb_positions: UWB_Ancors_Descriptor = UWB_Ancors_Descriptor(
             DATASET_NUMBER)
         self.ground_truth: GroundTruthEstimates = GroundTruthEstimates(
-            DATASET_NUMBER, pre_initialization=False)
+            DATASET_NUMBER, pre_initialization=True)
         self.imu_params: IMU = IMU()
         self.gnss_params: GNSS = GNSS()
 

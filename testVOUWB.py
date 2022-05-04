@@ -15,6 +15,8 @@ from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_r
 from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
 import seaborn as sns
 from Sensors.CameraSensor2.visualOdometry import VisualOdometry
+from scipy.spatial.transform import Rotation as Rot
+
 
 from voUWBTuning import *
 
@@ -180,18 +182,16 @@ class GtSAMTest:
         self.velocity_variables.append(V(len(self.velocity_variables)))
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
-        transelation = self.current_pose.rotation().matrix() @ transelation
+        transelation = self.current_pose.rotation().matrix().T @ transelation
         transelation[2] = 0
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
 
-        self.integrate_current_state_euler(rotation, transelation)
+        self.graph_values.insert(self.pose_variables[-1], pose)
+        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
 
-        self.graph_values.insert(self.pose_variables[-1], self.integrating_state)
-        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], self.integrating_state, gtsam.noiseModel.Diagonal.Sigmas(POSE_SIGMAS)))
-
-        measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
-        self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
+        #measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
+        #self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -237,7 +237,7 @@ class GtSAMTest:
                     gnss_counter = 0
 
         self.integrating_state = result.atPose3(self.pose_variables[-1])
-        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation())
+        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
@@ -249,10 +249,11 @@ class GtSAMTest:
             if measurement.measurement_type.value == "Camera":
 
                 if self.prev_image_state is None:
-                    self.visual_odometry.track_odometry(measurement.image)
+                    self.visual_odometry.track_odometry2(measurement.image)
                     self.prev_image_state = self.pose_variables[-1]
                 else:
-                    rotation, trans = self.visual_odometry.track_odometry(measurement.image)
+                    rotation, trans = self.visual_odometry.track_odometry2(measurement.image)
+                    #trans = self.current_pose.rotation().matrix() @ trans
                     self.add_vo_to_graph(rotation, trans)
                     self.time_stamps.append(measurement.time.to_time())
                     self.prev_image_state = self.pose_variables[-1]
@@ -260,7 +261,7 @@ class GtSAMTest:
             print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 3:
+            if len(self.uwb_counter) == 2:
 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
@@ -271,6 +272,7 @@ class GtSAMTest:
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
                 self.integrating_state = result.atPose3(self.pose_variables[-1])
+                self.visual_odometry.reset_initial_conditions(self.current_pose.rotation().matrix(), self.current_pose.translation())
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:
                     break
 

@@ -139,13 +139,14 @@ def SE3(R, t):
 
 class VisualOdometry:
 
-    def __init__(self, rot_init, t_init) -> None:
+    def __init__(self, rot_init, t_init, noise_values=0) -> None:
+        self.noise_values = noise_values
         self.camera = PinholeCamera()
         self.detector = cv2.ORB_create(1000, 1.2, 8)
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 0.25
+        self.scale = 0.3
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
@@ -159,7 +160,7 @@ class VisualOdometry:
         self.East = []
         self.North = []
         self.Down = []
-
+        self.noise_counter = 1
         # -90 grader rundt z, -90 grader i x
         self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
@@ -183,6 +184,72 @@ class VisualOdometry:
         self.T = best_T
         X = best_X1
         return X, self.T
+
+    def reset_initial_conditions(self, rot_init, t_init):
+        self.R = self.body_t_cam @ rot_init
+        self.t = self.body_t_cam @  rot_init @ np.asarray([t_init]).T
+        self.noise_counter = 1
+
+    def track_odometry2(self, image):
+        image = np.array(image)
+        # Track stuff
+        if self.old_image is not None:
+
+            self.kp2, self.des2 = self.detector.detectAndCompute(
+                self.old_image, None)
+            self.kp1, self.des1 = self.detector.detectAndCompute(
+                image, None)
+
+            matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
+
+            imageIndexes = []
+            for m, n in matches:
+                if m.distance < 0.75*n.distance:
+                    imageIndexes.append([m.queryIdx, m.trainIdx])
+
+            self.remove_outliers_with_ransac(imageIndexes)
+            self.E = estimate_E(self.xy1, self.xy2)
+
+            # Start extrating T
+            self.X, T = self.get_best_point_corespondence()
+
+            t = T[:3, 3]
+            t[0] = 0
+            R = T[:3, :3]
+            t = np.asarray([t]).T
+
+            # Kinematic equations for VO in NED
+            self.t += self.scale * R @ t
+            self.R = R.dot(self.R)
+
+            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
+            #rotation = Rot.from_matrix(rotation)
+            rotation = rotation.as_euler("xyz")
+            rotation = Rot.from_euler("xyz", [0, 0, rotation[2]]).as_matrix()
+            # Reset the variables to the new varaibles
+            self.old_image = image
+
+            keypoints = self.detector.detect(image, None)
+            keypoints, descriptors = self.detector.compute(image, keypoints)
+            new_img = cv2.drawKeypoints(
+                image, keypoints, None, color=(0, 255, 0), flags=0)
+            cv2.imshow("Frame", new_img)
+            cv2.waitKey(1)
+            self.noise_values = self.noise_counter * self.noise_values
+            self.noise_counter += 1
+            return rotation, self.body_t_cam.T @ self.t.copy()
+
+        else:
+            # Case for first image
+            self.old_image = image
+            self.old_points = self.detect(image)
+
+            # Initial rotation and transelation set to ground truth values
+            self.R = self.body_t_cam @ self.initial_rotation
+            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray(
+                [self.initial_position]).T
+
+            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
 
     def track_odometry(self, image):
         image = np.array(image)
