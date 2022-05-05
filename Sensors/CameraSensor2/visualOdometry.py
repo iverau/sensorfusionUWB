@@ -143,7 +143,7 @@ class VisualOdometry:
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 1.0
+        self.scale = 0.4
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
@@ -159,8 +159,8 @@ class VisualOdometry:
         self.Down = []
         self.noise_counter = 1
         # TODO: Sjekke at den siste her skal være transponert
-        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -215,16 +215,14 @@ class VisualOdometry:
             #t[0] = 0
             R = T[:3, :3]
             t = np.asarray([t]).T
+            r_temp = Rot.from_matrix(R).as_euler("xyz")
+            R = Rot.from_euler("xyz", [0, -r_temp[1], 0]).as_matrix()
 
             # Kinematic equations for VO in NED
             self.t += self.scale * self.R @ t
-            self.R = R.dot(self.R)
+            self.R = R @ self.R
 
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
-            #rotation = Rot.from_matrix(rotation)
-            rotation = rotation.as_euler("xyz")
-            print("ROtation:", Rot.from_euler("xyz", [0, 0, rotation[2]]).as_euler("xyz"))
-            rotation = Rot.from_euler("xyz", [0, 0, rotation[2]]).as_matrix()
+            rotation = self.body_t_cam @ self.R
             # Reset the variables to the new varaibles
             self.old_image = image
 
@@ -236,7 +234,7 @@ class VisualOdometry:
             cv2.waitKey(1)
             self.noise_values = self.noise_counter * self.noise_values_init
             self.noise_counter += 1
-            return rotation, self.body_t_cam.T @ self.t.copy()
+            return rotation, self.body_t_cam @ self.t.copy()
 
         else:
             # Case for first image
@@ -244,11 +242,11 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam @ self.initial_rotation
-            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray(
+            self.R = self.body_t_cam.T @ self.initial_rotation.T
+            self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray(
                 [self.initial_position]).T
 
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
+            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
 
     def track(self, image):
         image = np.array(image)
@@ -276,13 +274,17 @@ class VisualOdometry:
             t = T[:3, 3]
             R = T[:3, :3]
             t = np.asarray([t]).T
-
+            #t[1] = 0
+            print("Rotation angels:", Rot.from_matrix(self.R).as_euler("xyz", degrees=True))
+            print("Pre stuff", t)
+            print("Stuff:", self.R @ t)
             r_temp = Rot.from_matrix(R).as_euler("xyz")
-            R = Rot.from_euler("xyz", [-r_temp[0], -r_temp[1], -r_temp[2]]).as_matrix()
+            R = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
 
             # Kinematic equations for VO in camera frame
             self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
+
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
 
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
@@ -309,7 +311,7 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam.T @ self.initial_rotation
+            self.R = self.body_t_cam.T @ self.initial_rotation.T
             self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
