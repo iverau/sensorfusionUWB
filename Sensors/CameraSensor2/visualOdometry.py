@@ -178,9 +178,9 @@ class VisualOdometry:
                 best_num_visible = num_visible
                 best_T = T
                 best_X1 = X1
-        self.T = best_T
+        T = best_T
         X = best_X1
-        return X, self.T
+        return X, T
 
     def reset_initial_conditions(self, rot_init, t_init):
         self.R = self.body_t_cam @ rot_init
@@ -249,6 +249,8 @@ class VisualOdometry:
 
     def track(self, image):
         image = np.array(image)
+        image = self.camera.undistort_image(image)
+
         # Track stuff
         if self.old_image is not None:
 
