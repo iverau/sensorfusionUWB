@@ -46,9 +46,8 @@ class GroundTruthEstimates:
         else:
             self.time_offset = self.datasetSettings.gt_time_offset
 
-        self.start_index = self.find_index_closest(
-            self.time, self.datasetSettings.bag_start_time_offset)
-        self.time = self.time[self.start_index:] - self.time_offset
+        self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
+        self.time = self.time[self.start_index:]
         print("Start time of ground truth:", self.time[0])
 
         self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[

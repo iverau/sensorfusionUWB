@@ -139,11 +139,11 @@ class VisualOdometry:
         self.noise_values_init = noise_values
         self.noise_values = noise_values
         self.camera = PinholeCamera()
-        self.detector = cv2.ORB_create(2000, 1.2, 8)
+        self.detector = cv2.ORB_create(1000, 1.2, 8)
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 0.5
+        self.scale = 1.0
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
 
@@ -158,8 +158,9 @@ class VisualOdometry:
         self.North = []
         self.Down = []
         self.noise_counter = 1
-        # -90 grader rundt z, -90 grader i x
+        # TODO: Sjekke at den siste her skal være transponert
         self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -189,6 +190,8 @@ class VisualOdometry:
 
     def track_odometry2(self, image):
         image = np.array(image)
+        image = self.camera.undistort_image(image)
+
         # Track stuff
         if self.old_image is not None:
 
@@ -271,25 +274,24 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = T[:3, 3]
-            t[0] = 0
             R = T[:3, :3]
             t = np.asarray([t]).T
 
-            # Kinematic equations for VO in NED
+            r_temp = Rot.from_matrix(R).as_euler("xyz")
+            R = Rot.from_euler("xyz", [-r_temp[0], -r_temp[1], -r_temp[2]]).as_matrix()
+
+            # Kinematic equations for VO in camera frame
             self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
-
-            rotation = Rot.from_matrix(self.R).as_euler("xyz")
-            #self.R = Rot.from_euler("xyz", [0, rotation[1], 0]).as_matrix()
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
+            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
 
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
-            self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
-            self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
+            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
+            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
+            self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
 
             # Reset the variables to the new varaibles
             self.old_image = image
@@ -307,17 +309,17 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam @ self.initial_rotation
-            self.t = self.body_t_cam @  self.initial_rotation @ np.asarray([self.initial_position]).T
+            self.R = self.body_t_cam.T @ self.initial_rotation
+            self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
 
-            rotation = Rot.from_matrix(self.body_t_cam.T @ self.R)
+            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.North.append(self.body_t_cam.T.dot(self.t.copy())[0])
-            self.East.append(self.body_t_cam.T.dot(self.t.copy())[1])
-            self.Down.append(self.body_t_cam.T.dot(self.t.copy())[2])
+            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
+            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
+            self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
 
     def update_scale(self):
         # Update the scale parameter

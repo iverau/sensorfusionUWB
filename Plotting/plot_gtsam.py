@@ -55,7 +55,7 @@ def convert_to_NED(ground_truth, position_estimates, time_steps):
         gt_angels = ground_truth.gt_angels[gt_index, :]
         rotation = Rot.from_euler(
             "xyz", [gt_angels[0], gt_angels[1], gt_angels[2]])
-        ned_positions.append(rotation.as_matrix().T @ position.T)
+        ned_positions.append(rotation.as_matrix() @ position.T)
 
     return np.array(ned_positions)
 
