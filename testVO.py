@@ -30,6 +30,7 @@ class CameraUwbImuFusion:
 
         # Pose for pre init
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False)
+        print("INIT rotation", R_init.as_euler("xyz", degrees=True))
         T_init = self.ground_truth.initial_pose()[3:]
         T_init[2] = -0.7
 
@@ -55,7 +56,7 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 1000:
+            if iteration_number_cam > 2000:
                 break
 
         states = self.visual_odometry.states
