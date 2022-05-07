@@ -129,7 +129,7 @@ def decompose_E(E):
 def SE3(R, t):
     T = np.eye(4)
     T[:3, :3] = R
-    T[:3, 3] = t
+    T[:3, 3] = t.flatten().T
     return T
 
 
@@ -161,7 +161,7 @@ class VisualOdometry:
         self.noise_counter = 1
         # TODO: Sjekke at den siste her skal være transponert
         #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -319,7 +319,7 @@ class VisualOdometry:
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
 
-            self.states.append(SE3(self.R, self.body_t_cam @ self.t))
+            self.states.append(SE3(self.body_t_cam @ self.R, self.body_t_cam @ self.t))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
