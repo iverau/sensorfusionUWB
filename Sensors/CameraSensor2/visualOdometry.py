@@ -145,7 +145,7 @@ class VisualOdometry:
         self.old_image = None
         self.scale = 0.4
         self.n_features = 0
-        self.matcher = cv2.BFMatcher(cv2.NORM_L2, crossCheck=False)
+        self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
         self.initial_rotation = rot_init
         self.initial_position = t_init
@@ -184,8 +184,8 @@ class VisualOdometry:
         return X, T
 
     def reset_initial_conditions(self, rot_init, t_init):
-        self.R = self.body_t_cam @ rot_init
-        self.t = self.body_t_cam @  rot_init @ np.asarray([t_init]).T
+        self.R = self.body_t_cam.T @ rot_init
+        self.t = self.body_t_cam.T @ rot_init.T @ np.asarray([t_init]).T
         self.noise_counter = 1
 
     def track_odometry2(self, image):
@@ -212,14 +212,13 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = T[:3, 3]
-            #t[0] = 0
             R = T[:3, :3].T
             t = np.asarray([t]).T
             r_temp = Rot.from_matrix(R).as_euler("xyz")
             R = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
 
             # Kinematic equations for VO in NED
-            self.t += self.scale * self.R @ t
+            self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
 
             rotation = self.body_t_cam @ self.R
@@ -242,7 +241,7 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam.T @ self.initial_rotation.T
+            self.R = self.body_t_cam.T @ self.initial_rotation
             self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray(
                 [self.initial_position]).T
 
@@ -262,7 +261,7 @@ class VisualOdometry:
 
             imageIndexes = []
             for m, n in matches:
-                if m.distance < 0.75*n.distance:
+                if m.distance < 0.8*n.distance:
                     imageIndexes.append([m.queryIdx, m.trainIdx])
 
             self.remove_outliers_with_ransac(imageIndexes)
@@ -272,12 +271,12 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = T[:3, 3]
+            print(t)
             R = T[:3, :3].T
-            t = -np.asarray([t]).T
-            #t[1] = 0
-
+            t = np.asarray([t]).T
             r_temp = Rot.from_matrix(R).as_euler("xyz")
             R = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
+            print(r_temp)
 
             # Kinematic equations for VO in camera frame
             self.t = self.scale * self.R @ t + self.t
@@ -289,9 +288,13 @@ class VisualOdometry:
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
-            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
-            self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
+            position = rotation.as_matrix() @ self.body_t_cam @ self.t
+            #print("Pre calc", self.t)
+            #print("Post calc", position)
+
+            self.North.append(position[1])
+            self.East.append(position[0])
+            self.Down.append(position[2])
 
             # Reset the variables to the new varaibles
             self.old_image = image
@@ -311,14 +314,15 @@ class VisualOdometry:
             # Initial rotation and transelation set to ground truth values
             self.R = self.body_t_cam.T @ self.initial_rotation
             self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
+            #self.t = np.zeros((3, 1))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
-            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
+            self.North.append(self.body_t_cam.dot(self.t.copy())[1])
+            self.East.append(self.body_t_cam.dot(self.t.copy())[0])
             self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
 
     def update_scale(self):

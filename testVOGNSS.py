@@ -152,7 +152,7 @@ class GtSAMTest:
         self.velocity_variables.append(V(len(self.velocity_variables)))
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
-        transelation = self.current_pose.rotation().matrix().T @ transelation
+        transelation = self.current_pose.rotation().matrix() @ transelation
         transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)

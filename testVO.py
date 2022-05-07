@@ -51,14 +51,14 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 500:
+            if iteration_number_cam > 100:
                 break
 
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.figure(2)
         plot_position(np.array([np.array(self.visual_odometry.North)[:, 0], np.array(self.visual_odometry.East)[:, 0],
-                      np.array(self.visual_odometry.Down)[:, 0]]).T, self.ground_truth, self.time_stamps, convert_NED=True)
+                      np.array(self.visual_odometry.Down)[:, 0]]).T, self.ground_truth, self.time_stamps, convert_NED=False)
         plt.figure(3)
         plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(
             self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
