@@ -157,6 +157,7 @@ class VisualOdometry:
         self.East = []
         self.North = []
         self.Down = []
+        self.states = []
         self.noise_counter = 1
         # TODO: Sjekke at den siste her skal være transponert
         #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
@@ -211,7 +212,7 @@ class VisualOdometry:
             # Start extrating T
             self.X, T = self.get_best_point_corespondence()
 
-            t = T[:3, 3]
+            t = -T[:3, 3]
             R = T[:3, :3].T
             t = np.asarray([t]).T
             r_temp = Rot.from_matrix(R).as_euler("xyz")
@@ -270,7 +271,7 @@ class VisualOdometry:
             # Start extrating T
             self.X, T = self.get_best_point_corespondence()
 
-            t = T[:3, 3]
+            t = -T[:3, 3]
             print(t)
             R = T[:3, :3].T
             t = np.asarray([t]).T
@@ -287,13 +288,14 @@ class VisualOdometry:
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
+            self.states.append(SE3(rotation.as_matrix(), self.body_t_cam @ self.t))
 
             position = rotation.as_matrix() @ self.body_t_cam @ self.t
-            #print("Pre calc", self.t)
-            #print("Post calc", position)
+            print("Pre calc", self.t)
+            print("Post calc", position)
 
-            self.North.append(position[1])
-            self.East.append(position[0])
+            self.North.append(position[0])
+            self.East.append(position[1])
             self.Down.append(position[2])
 
             # Reset the variables to the new varaibles
@@ -312,17 +314,20 @@ class VisualOdometry:
             self.old_points = self.detect(image)
 
             # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam.T @ self.initial_rotation
-            self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
-            #self.t = np.zeros((3, 1))
+            #self.R = self.body_t_cam.T @ self.initial_rotation
+            #self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
+            self.R = np.eye(3)
+            self.t = np.zeros((3, 1))
+
+            self.states.append(SE3(self.R, self.body_t_cam @ self.t))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.North.append(self.body_t_cam.dot(self.t.copy())[1])
-            self.East.append(self.body_t_cam.dot(self.t.copy())[0])
+            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
+            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
             self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
 
     def update_scale(self):

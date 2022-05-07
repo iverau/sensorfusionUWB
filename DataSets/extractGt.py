@@ -29,8 +29,8 @@ class GroundTruthEstimates:
         self.extract_data(pre_initialization=pre_initialization)
 
     def initial_pose(self):
-        print("Initial pose:", self.east[0], self.north[0], self.down[0])
-        return np.array([self.roll[0], self.pitch[0], self.yaw[0], self.east[0], self.north[0], self.down[0]])
+        print("Initial pose:", self.north[0], self.east[0], self.down[0])
+        return np.array([self.roll[0], self.pitch[0], self.yaw[0], self.north[0], self.east[0], self.down[0]])
 
     def initial_velocity(self):
         # Initial velcoity is set to 0 as it moves close to a straight line
