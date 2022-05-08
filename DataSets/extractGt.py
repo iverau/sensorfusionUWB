@@ -28,9 +28,12 @@ class GroundTruthEstimates:
 
         self.extract_data(pre_initialization=pre_initialization)
 
-    def initial_pose(self):
-        print("Initial pose:", self.north[0], self.east[0], self.down[0])
-        return np.array([self.roll[0], self.pitch[0], self.yaw[0], self.north[0], self.east[0], self.down[0]])
+    def initial_pose(self, voBruteForce):
+        index = 0
+        if voBruteForce:
+            index = self.find_index_closest(self.time, 2*self.datasetSettings.gt_time_offset)
+        #print("Initial pose:", self.north[index], self.east[index], self.down[index])
+        return np.array([self.roll[index], self.pitch[index], self.yaw[index], self.north[index], self.east[index], self.down[index]])
 
     def initial_velocity(self):
         # Initial velcoity is set to 0 as it moves close to a straight line
@@ -47,7 +50,7 @@ class GroundTruthEstimates:
             self.time_offset = self.datasetSettings.gt_time_offset
 
         self.start_index = self.find_index_closest(self.time, self.datasetSettings.bag_start_time_offset)
-        self.time = self.time[self.start_index:]
+        self.time = self.time[self.start_index:] - self.datasetSettings.gt_time_offset
         print("Start time of ground truth:", self.time[0])
 
         self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[
