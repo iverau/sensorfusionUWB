@@ -55,11 +55,9 @@ class ROSData:
         return np.array([n, e, d])
 
     def generate_initialization_gnss_imu(self):
-        start_time = rospy.Time(self.bag.get_start_time(
-        ) + self.dataset_settings.bag_start_time_offset - 10)
-        end_time = rospy.Time(self.bag.get_start_time(
-        ) + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
-        topics = ["/sentiboard/adis", "/ublox2/fix"]
+        start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
+        end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        topics = ["/sentiboard/adis", "/ublox2/fix", "/camera/image_raw/compressed"]
         for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
             yield generate_measurement(topic, msg, t)
 

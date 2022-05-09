@@ -85,6 +85,8 @@ class GtSAMTest:
         self.time_stamps.append(self.ground_truth.time[0])
         self.prev_image_state = None
 
+        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
+
     def reset_pose_graph_variables(self):
         self.graph_values = gtsam.Values()
         self.factor_graph = gtsam.NonlinearFactorGraph()
@@ -160,6 +162,12 @@ class GtSAMTest:
         self.graph_values.insert(self.pose_variables[-1], pose)
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
 
+    def calculateTrajectoryLength(self, startPoint, endPoint):
+        return np.linalg.norm(endPoint - startPoint)
+
+    def calculateScale(self, trajectoryLengthGNSS):
+        return self.calculateTrajectoryLength(np.zeros((3, 1)), self.visual_odometry.states[-1][:3, 3])/trajectoryLengthGNSS
+
     def run(self):
         # Dummy variable for storing imu measurements
         imu_measurements = []
@@ -193,6 +201,9 @@ class GtSAMTest:
                 elif measurement.measurement_type.value == "IMU":
                     imu_measurements.append(measurement)
 
+                elif measurement.measurement_type.value == "Camera":
+                    self.visual_odometry.track(measurement.image)
+
                 if gnss_counter == 2:
                     self.isam.update(self.factor_graph, self.graph_values)
                     result = self.isam.calculateEstimate()
@@ -203,8 +214,13 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
+        self.visual_odometry.reset_initial_conditions()
+        gnssTrajectoryLength = self.calculateTrajectoryLength(self.ground_truth.initial_pose()[:3].T, self.current_pose.translation()[:3].T)
+        scale = self.calculateScale(gnssTrajectoryLength)
+        self.visual_odometry.update_scale(scale)
+        print("Scaling", scale)
+
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value == "GNSS":

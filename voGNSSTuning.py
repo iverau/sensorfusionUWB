@@ -21,7 +21,7 @@ POSE_SIGMAS = np.array([0.000175, 0.000175, 0.01, 1, 1, 0.001])
 # pre-integration parameters can be found in the file Sensors/Imu.py
 
 # VO tuning
-VO_SIGMAS = np.array([1e-5, 1e-5, 1e-2, 7e-1, 7e-1, 1e-10])  # rx, ry, rz, x, y, z
+VO_SIGMAS = np.array([1e-5, 1e-5, 1e-2, 1e0, 1e0, 1e-10])  # rx, ry, rz, x, y, z
 
 # GNSS tuning
 GNSS_PREINIT_ENABLED = True
@@ -31,4 +31,4 @@ GNSS_NOISE_RUNNING = np.array([0.8, 0.8, 0.5, 0.5, 0.5, 5])
 GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
 
 # Other constants
-NUMBER_OF_RUNNING_ITERATIONS = 500  # Full traj is about 3000
+NUMBER_OF_RUNNING_ITERATIONS = 2000  # Full traj is about 3000

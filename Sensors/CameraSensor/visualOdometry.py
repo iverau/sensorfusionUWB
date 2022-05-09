@@ -140,7 +140,7 @@ class VisualOdometry:
         self.camera = PinholeCamera()
         self.detector = cv2.ORB_create(1000, 1.2, 8)
         self.old_image = None
-        self.scale = 0.4
+        self.scale = 1.0
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
         # States
