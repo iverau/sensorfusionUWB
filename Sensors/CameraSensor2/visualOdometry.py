@@ -163,7 +163,6 @@ class VisualOdometry:
         #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
         self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
         #self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        self.body_t_cam_offset = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -277,11 +276,11 @@ class VisualOdometry:
             R = T[:3, :3].T
             t = np.asarray([t]).T
             r_temp = Rot.from_matrix(self.R).as_euler("xyz")
-            R_temp = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
+            #R_temp = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
             # print(r_temp)
 
             # Kinematic equations for VO in camera frame
-            self.t = self.scale * R_temp @ t + self.t
+            self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
