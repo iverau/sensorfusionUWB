@@ -143,7 +143,7 @@ class VisualOdometry:
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 0.2
+        self.scale = 0.4
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
@@ -161,8 +161,8 @@ class VisualOdometry:
         self.noise_counter = 1
         # TODO: Sjekke at den siste her skal være transponert
         #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        #self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
         self.body_t_cam_offset = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()
 
     def detect(self, img):
@@ -276,12 +276,12 @@ class VisualOdometry:
             t = -T[:3, 3]
             R = T[:3, :3].T
             t = np.asarray([t]).T
-            r_temp = Rot.from_matrix(R).as_euler("xyz")
-            R = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
-            print(r_temp)
+            r_temp = Rot.from_matrix(self.R).as_euler("xyz")
+            R_temp = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
+            # print(r_temp)
 
             # Kinematic equations for VO in camera frame
-            self.t = self.scale * self.R @ t + self.t
+            self.t = self.scale * R_temp @ t + self.t
             self.R = R @ self.R
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
@@ -292,11 +292,12 @@ class VisualOdometry:
 
             #print("Rotation", Rot.from_matrix(self.R).as_euler("xyz", degrees=True))
 
-            temp_r = Rot.from_matrix(self.R).as_euler("xyz")
-            temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
-            print("Rotation", temp_r.as_euler("xyz", degrees=True))
+            #temp_r = Rot.from_matrix(self.R).as_euler("xyz")
+            #temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
+            #print("Rotation", temp_r.as_euler("xyz", degrees=True))
+            temp_r = self.body_t_cam @ self.R @ self.body_t_cam.T
 
-            self.states.append(SE3(temp_r.as_matrix(), self.body_t_cam @ self.t))
+            self.states.append(SE3(temp_r, self.body_t_cam @ self.t))
 
             position = rotation.as_matrix() @ self.body_t_cam @ self.t
 
@@ -325,10 +326,11 @@ class VisualOdometry:
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
 
-            temp_r = Rot.from_matrix(self.R).as_euler("xyz")
-            temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
+            #temp_r = Rot.from_matrix(self.R).as_euler("xyz")
+            #temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
+            temp_r = self.body_t_cam @ self.R @ self.body_t_cam.T
 
-            self.states.append(SE3(temp_r.as_matrix(), self.body_t_cam @ self.t))
+            self.states.append(SE3(temp_r, self.body_t_cam @ self.t))
             print("Rotation", Rot.from_matrix(self.states[0][:3, :3]).as_euler("xyz"))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
