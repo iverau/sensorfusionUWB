@@ -56,13 +56,17 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 20:
+            if iteration_number_cam > 1000:
                 break
 
         states = self.visual_odometry.states
 
         for i in range(len(states)):
+            if i == 0:
+                print("Rot before", R.from_matrix(states[0][:3, :3]).as_euler("xyz", degrees=True))
             states[i] = self.initial_state @ states[i]
+
+        print("Rot after", R.from_matrix(states[0][:3, :3]).as_euler("xyz", degrees=True))
 
         north = np.array([states[i][0, 3] for i in range(len(states))])
         east = np.array([states[i][1, 3] for i in range(len(states))])

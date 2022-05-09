@@ -161,7 +161,9 @@ class VisualOdometry:
         self.noise_counter = 1
         # TODO: Sjekke at den siste her skal være transponert
         #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+        self.body_t_cam_offset = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -288,8 +290,13 @@ class VisualOdometry:
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
 
-            self.states.append(SE3(rotation.as_matrix(), self.body_t_cam @ self.t))
-            print("Rotation", rotation.as_euler("xyz", degrees=True))
+            #print("Rotation", Rot.from_matrix(self.R).as_euler("xyz", degrees=True))
+
+            temp_r = Rot.from_matrix(self.R).as_euler("xyz")
+            temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
+            print("Rotation", temp_r.as_euler("xyz", degrees=True))
+
+            self.states.append(SE3(temp_r.as_matrix(), self.body_t_cam @ self.t))
 
             position = rotation.as_matrix() @ self.body_t_cam @ self.t
 
@@ -318,7 +325,10 @@ class VisualOdometry:
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
 
-            self.states.append(SE3(self.body_t_cam @ self.R, self.body_t_cam @ self.t))
+            temp_r = Rot.from_matrix(self.R).as_euler("xyz")
+            temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
+
+            self.states.append(SE3(temp_r.as_matrix(), self.body_t_cam @ self.t))
             print("Rotation", Rot.from_matrix(self.states[0][:3, :3]).as_euler("xyz"))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
