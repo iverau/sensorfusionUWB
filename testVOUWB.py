@@ -86,6 +86,7 @@ class GtSAMTest:
         self.graph_values.insert(B1, self.current_bias)
         self.time_stamps.append(self.ground_truth.time[0])
         self.prev_image_state = None
+        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
 
     def add_UWB_to_graph(self, uwb_measurement):
 
@@ -186,12 +187,14 @@ class GtSAMTest:
         transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
-
         self.graph_values.insert(self.pose_variables[-1], pose)
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
 
-        #measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
-        #self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
+    def calculateTrajectoryLength(self, startPoint, endPoint):
+        return np.linalg.norm(endPoint - startPoint)
+
+    def calculateScale(self, trajectoryLengthGNSS):
+        return self.calculateTrajectoryLength(np.zeros((3, 1)), self.visual_odometry.states[-1][:3, 3])/trajectoryLengthGNSS
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -226,6 +229,9 @@ class GtSAMTest:
                 elif measurement.measurement_type.value == "IMU":
                     imu_measurements.append(measurement)
 
+                elif measurement.measurement_type.value == "Camera":
+                    self.visual_odometry.track(measurement.image)
+
                 if gnss_counter == 2:
                     self.isam.update(self.factor_graph, self.graph_values)
                     result = self.isam.calculateEstimate()
@@ -236,9 +242,13 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.integrating_state = result.atPose3(self.pose_variables[-1])
-        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
+        self.visual_odometry.reset_initial_conditions()
+        gnssTrajectoryLength = self.calculateTrajectoryLength(self.ground_truth.initial_pose()[:3].T, self.current_pose.translation()[:3].T)
+        scale = self.calculateScale(gnssTrajectoryLength)
+        self.visual_odometry.update_scale(scale)
+        print("Scaling", scale)
         imu_measurements = []
+
         for measurement in self.dataset.generate_measurements():
 
             # TODO lage nye states ved hver camera måling
