@@ -140,29 +140,18 @@ class VisualOdometry:
         self.noise_values = noise_values
         self.camera = PinholeCamera()
         self.detector = cv2.ORB_create(1000, 1.2, 8)
-        self.lk_params = dict(winSize=(21, 21), criteria=(
-            cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
         self.scale = 0.4
-        self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
         self.initial_rotation = rot_init
         self.initial_position = t_init
 
         # States
-        self.roll = []
-        self.pitch = []
-        self.yaw = []
-        self.East = []
-        self.North = []
-        self.Down = []
         self.states = []
         self.noise_counter = 1
-        # TODO: Sjekke at den siste her skal være transponert
-        #self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix().T  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
+
         self.body_t_cam = Rot.from_euler('xyz', [0.823, -2.807, 8.303], degrees=True).as_matrix()  @ np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
-        #self.body_t_cam = np.array([[0, 0, 1], [1, 0, 0], [0, 1, 0]])
 
     def detect(self, img):
         points = self.detector.detect(img)
@@ -258,7 +247,6 @@ class VisualOdometry:
 
             self.kp1, self.des1 = self.detector.detectAndCompute(self.old_image, None)
             self.kp2, self.des2 = self.detector.detectAndCompute(image, None)
-
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
             imageIndexes = []
@@ -270,43 +258,21 @@ class VisualOdometry:
             self.E = estimate_E(self.xy1, self.xy2)
 
             # Start extrating T
-            self.X, T = self.get_best_point_corespondence()
-
-            t = -T[:3, 3]
+            _, T = self.get_best_point_corespondence()
+            t = -T[:3, 3].reshape((3, 1))
             R = T[:3, :3].T
-            t = np.asarray([t]).T
-            r_temp = Rot.from_matrix(self.R).as_euler("xyz")
-            #R_temp = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
-            # print(r_temp)
 
             # Kinematic equations for VO in camera frame
             self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
+            rotation = self.body_t_cam @ self.R @ self.body_t_cam.T
 
-            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
-
-            self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
-            self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
-            self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
-
-            #print("Rotation", Rot.from_matrix(self.R).as_euler("xyz", degrees=True))
-
-            #temp_r = Rot.from_matrix(self.R).as_euler("xyz")
-            #temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
-            #print("Rotation", temp_r.as_euler("xyz", degrees=True))
-            temp_r = self.body_t_cam @ self.R @ self.body_t_cam.T
-
-            self.states.append(SE3(temp_r, self.body_t_cam @ self.t))
-
-            position = rotation.as_matrix() @ self.body_t_cam @ self.t
-
-            self.North.append(position[0])
-            self.East.append(position[1])
-            self.Down.append(position[2])
+            self.states.append(SE3(rotation, self.body_t_cam @ self.t))
 
             # Reset the variables to the new varaibles
             self.old_image = image
 
+            # Show the images at each iteration
             keypoints = self.detector.detect(image, None)
             keypoints, descriptors = self.detector.compute(image, keypoints)
             new_img = cv2.drawKeypoints(
@@ -319,27 +285,11 @@ class VisualOdometry:
             self.old_image = image
             self.old_points = self.detect(image)
 
-            # Initial rotation and transelation set to ground truth values
-            #self.R = self.body_t_cam.T @ self.initial_rotation
-            #self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray([self.initial_position]).T
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
-
-            #temp_r = Rot.from_matrix(self.R).as_euler("xyz")
-            #temp_r = Rot.from_euler("xyz", [0, 0, temp_r[1]])
             temp_r = self.body_t_cam @ self.R @ self.body_t_cam.T
 
             self.states.append(SE3(temp_r, self.body_t_cam @ self.t))
-            print("Rotation", Rot.from_matrix(self.states[0][:3, :3]).as_euler("xyz"))
-
-            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
-            self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
-            self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
-            self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
-
-            self.North.append(self.body_t_cam.dot(self.t.copy())[0])
-            self.East.append(self.body_t_cam.dot(self.t.copy())[1])
-            self.Down.append(self.body_t_cam.dot(self.t.copy())[2])
 
     def update_scale(self):
         # Update the scale parameter

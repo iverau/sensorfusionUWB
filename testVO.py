@@ -30,7 +30,6 @@ class CameraUwbImuFusion:
 
         # Pose for pre init
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose(voBruteForce=True)[:3], degrees=False)
-        print("INIT rotation", R_init.as_euler("xyz", degrees=True))
         T_init = self.ground_truth.initial_pose(voBruteForce=True)[3:]
         T_init[2] = -0.7
 
@@ -54,19 +53,14 @@ class CameraUwbImuFusion:
                 print(iteration_number_cam)
 
             iteration_number += 1
-            scale = 1
 
-            if iteration_number_cam > 2000:
+            if iteration_number_cam > 100:
                 break
 
         states = self.visual_odometry.states
 
         for i in range(len(states)):
-            if i == 0:
-                print("Rot before", R.from_matrix(states[0][:3, :3]).as_euler("xyz", degrees=True))
             states[i] = self.initial_state @ states[i]
-
-        print("Rot after", R.from_matrix(states[0][:3, :3]).as_euler("xyz", degrees=True))
 
         north = np.array([states[i][0, 3] for i in range(len(states))])
         east = np.array([states[i][1, 3] for i in range(len(states))])
@@ -76,8 +70,6 @@ class CameraUwbImuFusion:
         pitch = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[1] for i in range(len(states))])
         yaw = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[2] for i in range(len(states))])
 
-        plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
-        plt.title("Yaw measurements")
         plt.figure(2)
         plot_position(np.array([north, east, down]).T, self.ground_truth, self.time_stamps, convert_NED=False)
         plt.figure(3)
