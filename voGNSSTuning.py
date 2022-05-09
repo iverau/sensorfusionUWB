@@ -26,8 +26,9 @@ VO_SIGMAS = np.array([1e-5, 1e-5, 1e-2, 7e-1, 7e-1, 1e-10])  # rx, ry, rz, x, y,
 # GNSS tuning
 GNSS_PREINIT_ENABLED = True
 GNSS_NOISE = np.array([0.8, 0.8, 0.5, 4, 4, 5])
-GNSS_NOISE_RUNNING = np.array([0.8, 0.8, 0.5, 4, 4, 5])
+GNSS_NOISE_RUNNING = np.array([0.8, 0.8, 0.5, 0.5, 0.5, 5])
+
 GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
 
 # Other constants
-NUMBER_OF_RUNNING_ITERATIONS = 1000  # Full traj is about 3000
+NUMBER_OF_RUNNING_ITERATIONS = 500  # Full traj is about 3000

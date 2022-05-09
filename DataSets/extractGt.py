@@ -28,7 +28,7 @@ class GroundTruthEstimates:
 
         self.extract_data(pre_initialization=pre_initialization)
 
-    def initial_pose(self, voBruteForce):
+    def initial_pose(self, voBruteForce=False):
         index = 0
         if voBruteForce:
             index = self.find_index_closest(self.time, 2*self.datasetSettings.gt_time_offset)

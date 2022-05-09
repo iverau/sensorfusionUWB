@@ -175,8 +175,8 @@ class VisualOdometry:
         return X, T
 
     def reset_initial_conditions(self, rot_init, t_init):
-        self.R = self.body_t_cam.T @ rot_init
-        self.t = self.body_t_cam.T @ rot_init.T @ np.asarray([t_init]).T
+        self.R = np.eye(3)
+        self.t = np.zeros((3, 1))
         self.noise_counter = 1
 
     def track_odometry2(self, image):
@@ -266,6 +266,7 @@ class VisualOdometry:
             self.t = self.scale * self.R @ t + self.t
             self.R = R @ self.R
             rotation = self.body_t_cam @ self.R @ self.body_t_cam.T
+            rotation = self.createYawRotation(rotation)
 
             self.states.append(SE3(rotation, self.body_t_cam @ self.t))
 
@@ -279,6 +280,7 @@ class VisualOdometry:
                 image, keypoints, None, color=(0, 255, 0), flags=0)
             cv2.imshow("Frame", new_img)
             cv2.waitKey(1)
+            return rotation, self.body_t_cam @ self.t
 
         else:
             # Case for first image
@@ -287,13 +289,19 @@ class VisualOdometry:
 
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
-            temp_r = self.body_t_cam @ self.R @ self.body_t_cam.T
+            rotation = self.body_t_cam @ self.R @ self.body_t_cam.T
+            rotation = self.createYawRotation(rotation)
 
-            self.states.append(SE3(temp_r, self.body_t_cam @ self.t))
+            self.states.append(SE3(rotation, self.body_t_cam @ self.t))
+            return rotation, self.body_t_cam @ self.t
 
     def update_scale(self):
         # Update the scale parameter
         pass
+
+    def createYawRotation(self, rotation):
+        temp_rot = Rot.from_matrix(rotation).as_euler("xyz")
+        return Rot.from_euler("xyz", [0, 0, temp_rot[2]]).as_matrix()
 
     def remove_outliers_with_ransac(self, imageIndexes):
         # Extract the uv points and their projection from the images

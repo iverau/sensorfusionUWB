@@ -182,7 +182,8 @@ class GtSAMTest:
         self.velocity_variables.append(V(len(self.velocity_variables)))
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
-        transelation = self.current_pose.rotation().matrix().T @ transelation
+        transelation = self.current_pose.rotation().matrix() @ transelation + self.current_pose.translation().reshape((3, 1))
+        rotation = self.current_pose.rotation().matrix() @ rotation
         transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
@@ -248,10 +249,10 @@ class GtSAMTest:
 
             if measurement.measurement_type.value == "Camera":
                 if self.prev_image_state is None:
-                    self.visual_odometry.track_odometry2(measurement.image)
+                    self.visual_odometry.track(measurement.image)
                     self.prev_image_state = self.pose_variables[-1]
                 else:
-                    rotation, trans = self.visual_odometry.track_odometry2(measurement.image)
+                    rotation, trans = self.visual_odometry.track(measurement.image)
                     self.add_vo_to_graph(rotation, trans)
                     self.time_stamps.append(measurement.time.to_time())
                     self.prev_image_state = self.pose_variables[-1]
