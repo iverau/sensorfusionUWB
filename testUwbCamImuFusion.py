@@ -214,12 +214,12 @@ class GtSAMTest:
             print("Pose of anchor:", uwb_position.position(), "\n")
 
     def add_vo_to_graph(self, rotation, transelation):
-        transelation = self.current_pose.rotation().matrix() @ transelation
-        transelation[2] = 0
+        transelation = self.current_pose.rotation().matrix() @ transelation + self.current_pose.translation().reshape((3, 1))
+        rotation = self.current_pose.rotation().matrix() @ rotation
+        transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
-        measurement_noise = gtsam.noiseModel.Diagonal.Sigmas(VO_SIGMAS)
-        self.factor_graph.add(gtsam.BetweenFactorPose3(self.prev_image_state, self.pose_variables[-1], pose, measurement_noise))
+        self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
 
     def run(self):
         # Dummy variable for storing imu measurements
@@ -264,8 +264,7 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.visual_odometry = VisualOdometry(
-            self.current_pose.rotation().matrix(), self.current_pose.translation())
+        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
@@ -284,10 +283,10 @@ class GtSAMTest:
 
                 if measurement.measurement_type.value == "Camera":
                     if self.prev_image_state is None:
-                        self.visual_odometry.track_odometry(measurement.image)
+                        self.visual_odometry.track(measurement.image)
                         self.prev_image_state = self.pose_variables[-1]
                     else:
-                        rotation, trans = self.visual_odometry.track_odometry(measurement.image)
+                        rotation, trans = self.visual_odometry.track(measurement.image)
                         self.add_vo_to_graph(rotation, trans)
                         self.prev_image_state = self.pose_variables[-1]
 
