@@ -143,7 +143,7 @@ class VisualOdometry:
         self.lk_params = dict(winSize=(21, 21), criteria=(
             cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
         self.old_image = None
-        self.scale = 0.4
+        self.scale = 0.2
         self.n_features = 0
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
@@ -272,7 +272,6 @@ class VisualOdometry:
             self.X, T = self.get_best_point_corespondence()
 
             t = -T[:3, 3]
-            print(t)
             R = T[:3, :3].T
             t = np.asarray([t]).T
             r_temp = Rot.from_matrix(R).as_euler("xyz")
@@ -288,11 +287,11 @@ class VisualOdometry:
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])
             self.pitch.append(rotation.as_euler("xyz", degrees=False)[1])
             self.yaw.append(rotation.as_euler("xyz", degrees=False)[2])
+
             self.states.append(SE3(rotation.as_matrix(), self.body_t_cam @ self.t))
+            print("Rotation", rotation.as_euler("xyz", degrees=True))
 
             position = rotation.as_matrix() @ self.body_t_cam @ self.t
-            print("Pre calc", self.t)
-            print("Post calc", position)
 
             self.North.append(position[0])
             self.East.append(position[1])
@@ -320,6 +319,7 @@ class VisualOdometry:
             self.t = np.zeros((3, 1))
 
             self.states.append(SE3(self.body_t_cam @ self.R, self.body_t_cam @ self.t))
+            print("Rotation", Rot.from_matrix(self.states[0][:3, :3]).as_euler("xyz"))
 
             rotation = Rot.from_matrix(self.body_t_cam @ self.R)
             self.roll.append(rotation.as_euler("xyz", degrees=False)[0])

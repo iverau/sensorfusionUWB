@@ -29,9 +29,9 @@ class CameraUwbImuFusion:
     def initialize_graph(self):
 
         # Pose for pre init
-        R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False)
+        R_init = R.from_euler("xyz", self.ground_truth.initial_pose(voBruteForce=True)[:3], degrees=False)
         print("INIT rotation", R_init.as_euler("xyz", degrees=True))
-        T_init = self.ground_truth.initial_pose()[3:]
+        T_init = self.ground_truth.initial_pose(voBruteForce=True)[3:]
         T_init[2] = -0.7
 
         self.initial_state = np.eye(4)
@@ -56,7 +56,7 @@ class CameraUwbImuFusion:
             iteration_number += 1
             scale = 1
 
-            if iteration_number_cam > 2000:
+            if iteration_number_cam > 20:
                 break
 
         states = self.visual_odometry.states
@@ -68,13 +68,16 @@ class CameraUwbImuFusion:
         east = np.array([states[i][1, 3] for i in range(len(states))])
         down = np.array([states[i][2, 3] for i in range(len(states))])
 
+        roll = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[0] for i in range(len(states))])
+        pitch = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[1] for i in range(len(states))])
+        yaw = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[2] for i in range(len(states))])
+
         plt.plot(range(len(self.visual_odometry.yaw)), np.array(self.visual_odometry.yaw))
         plt.title("Yaw measurements")
         plt.figure(2)
         plot_position(np.array([north, east, down]).T, self.ground_truth, self.time_stamps, convert_NED=False)
         plt.figure(3)
-        plot_angels(np.array([np.array(self.visual_odometry.roll), np.array(self.visual_odometry.pitch), np.array(
-            self.visual_odometry.yaw)]).T, self.ground_truth, self.time_stamps)
+        plot_angels(np.array([roll, pitch, yaw]).T, self.ground_truth, self.time_stamps)
 
         plt.show()
 
