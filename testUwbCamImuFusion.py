@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
 from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
 import seaborn as sns
-from Sensors.CameraSensor2.visualOdometry import VisualOdometry
+from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
 from uwbCamImuTuning import *
 
@@ -264,7 +264,7 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
+        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 

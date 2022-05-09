@@ -1,7 +1,7 @@
 import gtsam
 from DataSets.extractData import ROSData
 from DataSets.extractGt import GroundTruthEstimates
-from gtsam.symbol_shorthand import X, L, V, B
+from gtsam.symbol_shorthand import X, V, B
 import numpy as np
 from settings import DATASET_NUMBER
 from DataTypes.uwb_position import UWB_Ancors_Descriptor
@@ -11,10 +11,10 @@ from Sensors.IMU import IMU
 from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
-from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
+from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels
 import seaborn as sns
-from Sensors.CameraSensor2.visualOdometry import VisualOdometry
+from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
 from voGNSSTuning import *
 
@@ -203,7 +203,7 @@ class GtSAMTest:
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
 
-        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
+        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
@@ -236,7 +236,7 @@ class GtSAMTest:
                 self.reset_pose_graph_variables()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
-                self.visual_odometry.reset_initial_conditions(self.current_pose.rotation().matrix(), self.current_pose.translation())
+                self.visual_odometry.reset_initial_conditions()
 
                 gnss_counter = 0
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:

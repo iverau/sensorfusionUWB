@@ -1,6 +1,5 @@
-from Sensors.CameraSensor2.camera import PinholeCamera
+from Sensors.CameraSensor.camera import PinholeCamera
 import cv2
-import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
 
@@ -115,7 +114,7 @@ def decompose_E(E):
     Returns a list of 4x4 transformation matrices.
     """
     U, _, VT = np.linalg.svd(E)
-    R90 = np.array([[0, -1, 0], [+1, 0, 0], [0, 0, 1]])
+    R90 = np.array([[0, -1, 0], [1, 0, 0], [0, 0, 1]])
     R1 = U @ R90 @ VT
     R2 = U @ R90.T @ VT
     if np.linalg.det(R1) < 0:
@@ -135,7 +134,7 @@ def SE3(R, t):
 
 class VisualOdometry:
 
-    def __init__(self, rot_init, t_init, noise_values=0) -> None:
+    def __init__(self, noise_values=0) -> None:
         self.noise_values_init = noise_values
         self.noise_values = noise_values
         self.camera = PinholeCamera()
@@ -143,9 +142,6 @@ class VisualOdometry:
         self.old_image = None
         self.scale = 0.4
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
-
-        self.initial_rotation = rot_init
-        self.initial_position = t_init
 
         # States
         self.states = []
@@ -174,73 +170,13 @@ class VisualOdometry:
         X = best_X1
         return X, T
 
-    def reset_initial_conditions(self, rot_init, t_init):
+    def reset_initial_conditions(self):
         self.R = np.eye(3)
         self.t = np.zeros((3, 1))
         self.noise_counter = 1
 
-    def track_odometry2(self, image):
-        image = np.array(image)
-        image = self.camera.undistort_image(image)
-
-        # Track stuff
-        if self.old_image is not None:
-
-            self.kp1, self.des1 = self.detector.detectAndCompute(self.old_image, None)
-            self.kp2, self.des2 = self.detector.detectAndCompute(image, None)
-
-            matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
-
-            imageIndexes = []
-            for m, n in matches:
-                if m.distance < 0.75*n.distance:
-                    imageIndexes.append([m.queryIdx, m.trainIdx])
-
-            self.remove_outliers_with_ransac(imageIndexes)
-            self.E = estimate_E(self.xy1, self.xy2)
-
-            # Start extrating T
-            self.X, T = self.get_best_point_corespondence()
-
-            t = -T[:3, 3]
-            R = T[:3, :3].T
-            t = np.asarray([t]).T
-            r_temp = Rot.from_matrix(R).as_euler("xyz")
-            R = Rot.from_euler("xyz", [0, r_temp[1], 0]).as_matrix()
-
-            # Kinematic equations for VO in NED
-            self.t = self.scale * self.R @ t + self.t
-            self.R = R @ self.R
-
-            rotation = self.body_t_cam @ self.R
-            # Reset the variables to the new varaibles
-            self.old_image = image
-
-            keypoints = self.detector.detect(image, None)
-            keypoints, descriptors = self.detector.compute(image, keypoints)
-            new_img = cv2.drawKeypoints(
-                image, keypoints, None, color=(0, 255, 0), flags=0)
-            cv2.imshow("Frame", new_img)
-            cv2.waitKey(1)
-            self.noise_values = self.noise_counter * self.noise_values_init
-            self.noise_counter += 1
-            return rotation, self.body_t_cam @ self.t.copy()
-
-        else:
-            # Case for first image
-            self.old_image = image
-            self.old_points = self.detect(image)
-
-            # Initial rotation and transelation set to ground truth values
-            self.R = self.body_t_cam.T @ self.initial_rotation
-            self.t = self.body_t_cam.T @ self.initial_rotation.T @ np.asarray(
-                [self.initial_position]).T
-
-            rotation = Rot.from_matrix(self.body_t_cam @ self.R)
-
     def track(self, image):
-        image = np.array(image)
-        image = self.camera.undistort_image(image)
+        image = self.camera.undistort_image(np.array(image))
 
         # Track stuff
         if self.old_image is not None:
@@ -285,7 +221,6 @@ class VisualOdometry:
         else:
             # Case for first image
             self.old_image = image
-            self.old_points = self.detect(image)
 
             self.R = np.eye(3)
             self.t = np.zeros((3, 1))
@@ -295,9 +230,8 @@ class VisualOdometry:
             self.states.append(SE3(rotation, self.body_t_cam @ self.t))
             return rotation, self.body_t_cam @ self.t
 
-    def update_scale(self):
-        # Update the scale parameter
-        pass
+    def update_scale(self, scale):
+        self.scale = scale
 
     def createYawRotation(self, rotation):
         temp_rot = Rot.from_matrix(rotation).as_euler("xyz")
@@ -311,20 +245,8 @@ class VisualOdometry:
 
         # Calculate amount of the ransac trials and run ransac on the matches
         num_trials = get_num_ransac_trials(8, 0.99, 0.50)
-        _, inliers = estimate_E_ransac(
-            xy1, xy2, self.camera.K, 4.0, num_trials)
+        _, inliers = estimate_E_ransac(xy1, xy2, self.camera.K, 4.0, num_trials)
 
         # Remove outliers from the image coordinates
-        self.uv1 = uv1.T[:, inliers]
-        self.uv2 = uv2.T[:, inliers]
         self.xy1 = xy1[:, inliers]
         self.xy2 = xy2[:, inliers]
-
-        # Save the descriptor and keypoints for the model for later usage
-        kp1 = np.array(self.kp1)
-        imageIndexes = np.array(imageIndexes)
-        des1 = np.array(self.des1)
-        self.model_descriptor = des1[imageIndexes[:, 0]]
-        self.model_descriptor = self.model_descriptor[inliers]
-        self.model_keypoints = kp1[imageIndexes[:, 0]]
-        self.model_keypoints = self.model_keypoints[inliers]

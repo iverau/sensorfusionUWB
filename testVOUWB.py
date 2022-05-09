@@ -14,8 +14,7 @@ import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
 from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
 import seaborn as sns
-from Sensors.CameraSensor2.visualOdometry import VisualOdometry
-from scipy.spatial.transform import Rotation as Rot
+from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
 
 from voUWBTuning import *
@@ -238,7 +237,7 @@ class GtSAMTest:
                     gnss_counter = 0
 
         self.integrating_state = result.atPose3(self.pose_variables[-1])
-        self.visual_odometry = VisualOdometry(self.current_pose.rotation().matrix(), self.current_pose.translation(), noise_values=VO_SIGMAS)
+        self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
         for measurement in self.dataset.generate_measurements():
 
@@ -271,7 +270,7 @@ class GtSAMTest:
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
                 self.integrating_state = result.atPose3(self.pose_variables[-1])
-                self.visual_odometry.reset_initial_conditions(self.current_pose.rotation().matrix(), self.current_pose.translation())
+                self.visual_odometry.reset_initial_conditions()
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:
                     break
 

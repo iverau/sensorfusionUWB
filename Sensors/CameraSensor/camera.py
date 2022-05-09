@@ -1,6 +1,7 @@
 import numpy as np
 import cv2
 
+
 class PinholeCamera:
 
     def __init__(self) -> None:
@@ -16,9 +17,9 @@ class PinholeCamera:
     def undistort_image(self, img):
         optimalMatrix, roi = cv2.getOptimalNewCameraMatrix(self.K, self.dist, (self.width, self.height), 1, (self.width, self.height))
         undistorted_image = cv2.undistort(img, self.K, self.dist, None, optimalMatrix)
-        x,y,w,h = roi
+        x, y, w, h = roi
         return undistorted_image[y:y+h, x:x+w]
-        
+
     def undistort_points(self, uv):
         uvs_undistorted = cv2.undistortPoints(uv, self.K, self.dist, None, self.K)
         return uvs_undistorted.ravel().reshape(uvs_undistorted.shape[0], 2)

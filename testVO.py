@@ -4,9 +4,7 @@ from DataSets.extractGt import GroundTruthEstimates
 from settings import DATASET_NUMBER
 import numpy as np
 from scipy.spatial.transform import Rotation as R
-from Sensors.CameraSensor.featureDetector import *
-from Sensors.CameraSensor.featureMatcher import *
-from Sensors.CameraSensor2.visualOdometry import VisualOdometry
+from Sensors.CameraSensor.visualOdometry import VisualOdometry
 from Plotting.plot_gtsam import plot_position, plot_angels
 import matplotlib.pyplot as plt
 
@@ -38,7 +36,7 @@ class CameraUwbImuFusion:
         self.initial_state[:3, 3] = T_init.T
 
         # Initialize vo
-        self.visual_odometry = VisualOdometry(R_init.as_matrix(), T_init)
+        self.visual_odometry = VisualOdometry()
 
     def run(self):
         iteration_number = 0
