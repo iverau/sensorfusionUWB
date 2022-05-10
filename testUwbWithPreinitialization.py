@@ -218,7 +218,6 @@ class GtSAMTest:
         # Dummy variable for storing imu measurements
         imu_measurements = []
         iteration_number = 0
-
         if GNSS_PREINIT_ENABLED:
             gnss_counter = 0
             # 10 secs of GNSS
@@ -236,8 +235,8 @@ class GtSAMTest:
                         self.isam.update()
 
                         # TODO: Hvorfor er denne så viktig å ha lav
-                        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_pose.rotation(
-                        ).matrix() @ self.navstate.velocity(), gtsam.noiseModel.Diagonal.Sigmas(GNSS_VELOCITY_SIGMAS)))
+                        self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_pose.rotation().matrix()
+                                              @ self.navstate.velocity(), gtsam.noiseModel.Diagonal.Sigmas(GNSS_VELOCITY_SIGMAS)))
                         self.factor_graph.add(gtsam.PriorFactorConstantBias(
                             self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
 
@@ -267,6 +266,7 @@ class GtSAMTest:
                     gnss_counter = 0
 
         imu_measurements = []
+        length_of_preinitialization = len(self.pose_variables)
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value == "UWB":
@@ -319,6 +319,16 @@ class GtSAMTest:
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
 
+        # Compensate for UWB arm
+        uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
+        gnss_offset = np.array([3.015, 0, -1.36])
+
+        # for index in range(len(positions[:length_of_preinitialization])):
+        #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
+
+        for index in range(len(positions[length_of_preinitialization:])):
+            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
+
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
 
         print("\n-- Plot pose")
@@ -332,8 +342,9 @@ class GtSAMTest:
         plt.figure(4)
         plot_bias(biases)
         plt.figure(5)
-        plot_vel(gtsam_velocity_from_results(
-            result, self.velocity_variables), self.time_stamps, self.ground_truth)
+        plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
+        # plt.figure(6)
+        #plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
         plt.show()
 
 

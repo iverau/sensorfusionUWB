@@ -5,9 +5,9 @@ import numpy as np
 class GNSS:
     def __init__(self):
         self.setup_gnss_params()
-    
+
     def setup_gnss_params(self):
-        scaling = 1000 # 1000, 10000
+        scaling = 1000  # 1000, 10000
         xSigma = 0.26 * scaling
         ySigma = 0.26 * scaling
         zSigma = 0.26 * scaling * 2  # larger vertical uncertainty
@@ -20,7 +20,7 @@ class GNSS:
     def T_in_body(self):
         """GNSS position given in body frame"""
         #             x     y      z
-        T = np.array([2.99, 0.10, -1.3])
+        T = np.array([3.015, 0, -1.36])
         return T
 
     def add_measurement(self, pose_global, pose_key, measurement):

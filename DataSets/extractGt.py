@@ -90,7 +90,7 @@ class GroundTruthEstimates:
 
     @staticmethod
     def generate_path(dataset_id):
-        return Path.joinpath(Path(__file__).parent.absolute(), "Gnssdata/obsv_estimates" + "4" + ".mat")
+        return Path.joinpath(Path(__file__).parent.absolute(), "Gnssdata/obsv_estimates" + str(dataset_id) + ".mat")
 
     @staticmethod
     def select_dataset(id: int):
