@@ -29,4 +29,4 @@ GNSS_NOISE = np.array([0.8, 0.8, 0.5, 4, 4, 5])
 GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
 
 # Other constants
-NUMBER_OF_RUNNING_ITERATIONS = 2000  # Full traj is about 3000
+NUMBER_OF_RUNNING_ITERATIONS = 300  # Full traj is about 3000

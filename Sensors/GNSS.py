@@ -20,7 +20,7 @@ class GNSS:
     def T_in_body(self):
         """GNSS position given in body frame"""
         #             x     y      z
-        T = np.array([3.015, 0, -1.36])
+        T = np.array([2.99, 0.10, -1.3])
         return T
 
     def add_measurement(self, pose_global, pose_key, measurement):
