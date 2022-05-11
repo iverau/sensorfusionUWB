@@ -218,7 +218,8 @@ class GtSAMTest:
         self.visual_odometry.reset_initial_conditions()
         gnssTrajectoryLength = self.calculateTrajectoryLength(self.ground_truth.initial_pose()[:3].T, self.current_pose.translation()[:3].T)
         scale = self.calculateScale(gnssTrajectoryLength)
-        self.visual_odometry.update_scale(0.2)
+        self.visual_odometry.update_scale(0.4)
+        length_of_preinitialization = len(self.pose_variables)
         print("Scaling", scale)
 
         for measurement in self.dataset.generate_measurements():
@@ -261,6 +262,14 @@ class GtSAMTest:
         self.isam.update(self.factor_graph, self.graph_values)
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
+        uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
+        gnss_offset = np.array([3.015, 0, -1.36])
+
+        # for index in range(len(positions[:length_of_preinitialization])):
+        #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
+
+        for index in range(len(positions[length_of_preinitialization:])):
+            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
 
         print("\n-- Plot pose")
         plt.figure(1)
