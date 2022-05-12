@@ -2,6 +2,19 @@ from Sensors.CameraSensor.camera import PinholeCamera
 import cv2
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+from scipy.spatial.transform import Rotation as R
+import matplotlib.pyplot as plt
+from scipy.sparse import lil_matrix
+from scipy.optimize import least_squares
+
+
+def rotate_z(radians):
+    c = np.cos(radians)
+    s = np.sin(radians)
+    return np.array([[c, -s, 0, 0],
+                     [s, c, 0, 0],
+                     [0, 0, 1, 0],
+                     [0, 0, 0, 1]])
 
 
 def getCommonImagePoints(imageIndexes, kp1, kp2):
@@ -138,10 +151,10 @@ class VisualOdometry:
         self.noise_values_init = noise_values
         self.noise_values = noise_values
         self.camera = PinholeCamera()
-        self.detector = cv2.ORB_create(1000, 1.2, 8)
+        self.detector = cv2.ORB_create(nfeatures=250)
         self.old_image = None
         self.scale = 1.0
-        self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
+        self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING2, crossCheck=False)
 
         # States
         self.states = []
@@ -167,6 +180,7 @@ class VisualOdometry:
                 best_T = T
                 best_X1 = X1
         T = best_T
+        self.T = best_T
         X = best_X1
         return X, T
 
@@ -186,21 +200,29 @@ class VisualOdometry:
             matches = self.matcher.knnMatch(self.des1, self.des2, k=2)
 
             imageIndexes = []
+            good = []
             for m, n in matches:
                 if m.distance < 0.8*n.distance:
                     imageIndexes.append([m.queryIdx, m.trainIdx])
+                    good.append([m])
 
+            #img3 = cv2.drawMatchesKnn(self.old_image, self.kp1, image, self.kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+            # plt.imshow(img3)
+            # plt.show()
             self.remove_outliers_with_ransac(imageIndexes)
             self.E = estimate_E(self.xy1, self.xy2)
 
             # Start extrating T
-            _, T = self.get_best_point_corespondence()
+            self.X, T = self.get_best_point_corespondence()
+
             t = -T[:3, 3].reshape((3, 1))
             R = T[:3, :3].T
 
             # Kinematic equations for VO in camera frame
-            self.t = self.scale * self.R @ t + self.t
-            self.R = R @ self.R
+            rotation = self.createYawRotation(self.R)
+
+            self.t = self.scale * rotation @ t + self.t
+            self.R = self.R @ R
             rotation = self.body_t_cam @ self.R @ self.body_t_cam.T
             rotation = self.createYawRotation(rotation)
 
@@ -244,9 +266,10 @@ class VisualOdometry:
         xy2 = self.camera.Kinv @ uv2.T
 
         # Calculate amount of the ransac trials and run ransac on the matches
-        num_trials = get_num_ransac_trials(8, 0.99, 0.50)
-        _, inliers = estimate_E_ransac(xy1, xy2, self.camera.K, 4.0, num_trials)
-
+        num_trials = get_num_ransac_trials(8, 0.999, 0.50)
+        _, inliers = estimate_E_ransac(xy1, xy2, self.camera.K, 1.0, num_trials)
         # Remove outliers from the image coordinates
         self.xy1 = xy1[:, inliers]
         self.xy2 = xy2[:, inliers]
+        self.uv1 = uv1.T[:, inliers]
+        self.uv2 = uv2.T[:, inliers]

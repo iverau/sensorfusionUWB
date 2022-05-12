@@ -218,7 +218,7 @@ class GtSAMTest:
         self.visual_odometry.reset_initial_conditions()
         gnssTrajectoryLength = self.calculateTrajectoryLength(self.ground_truth.initial_pose()[:3].T, self.current_pose.translation()[:3].T)
         scale = self.calculateScale(gnssTrajectoryLength)
-        self.visual_odometry.update_scale(0.4)
+        self.visual_odometry.update_scale(0.3)
         length_of_preinitialization = len(self.pose_variables)
         print("Scaling", scale)
 

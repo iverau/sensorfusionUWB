@@ -37,7 +37,7 @@ class CameraUwbImuFusion:
 
         # Initialize vo
         self.visual_odometry = VisualOdometry()
-        self.visual_odometry.update_scale(0.2)
+        self.visual_odometry.update_scale(0.25)
 
     def run(self):
         iteration_number = 0
@@ -53,7 +53,7 @@ class CameraUwbImuFusion:
 
             iteration_number += 1
 
-            if iteration_number_cam > 3000:
+            if iteration_number_cam > 1000:
                 break
 
         states = self.visual_odometry.states
