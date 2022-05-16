@@ -1,6 +1,34 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.spatial.transform import Rotation as Rot
+from scipy.interpolate import interp1d
+
+
+def ATE(traj1, traj2):
+    residualTraj = traj1 - traj2
+    sum_value = 0
+    for element, t in zip(residualTraj.as_coordinates().T, residualTraj.time):
+        sum_value += np.inner(element, element)
+    return np.sqrt(sum_value/len(residualTraj))
+
+
+def absoluteError(ground_truth, estimate):
+    residual = ground_truth - estimate
+    # print(residual)
+    return sum([abs(r) for r in residual])/len(residual)
+
+
+def get_common_time_frame(time_gt, time_orb, resolution):
+    return np.linspace(max(time_gt[0], time_orb[0]), min(time_orb[-1], time_gt[-1]), resolution)
+
+
+def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=1000):
+    f1 = interp1d(time_gt, value_gt)
+    f2 = interp1d(time_orb, value_orb)
+
+    time_frame = get_common_time_frame(time_gt, time_orb, resolution)
+
+    return f1(time_frame), f2(time_frame), time_frame
 
 
 def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, ground_truth):
@@ -104,6 +132,49 @@ def convert_to_body(ground_truth):
     return np.array(body_pos)
 
 
+def plot_threedof2(position, euler_angels, ground_truth, time_steps):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps -= time_steps[0]
+
+    gt_time = ground_truth.time
+    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    #gt_time = gt_time[index:]
+    gt_time -= gt_time[0]
+
+    r2d = 180/np.pi
+
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    print("Error North:", absoluteError(gt, est))
+    plt.suptitle("Positions")
+    plt.subplot(311)
+    plt.plot(time, est)
+    plt.plot(time, gt)
+    plt.legend(["Estimate", "Ground truth"])
+
+    plt.grid()
+    plt.ylabel("North [m]")
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+    print("Error East:", absoluteError(gt, est))
+
+    plt.subplot(312)
+    plt.plot(time, est)
+    plt.plot(time, gt)
+    plt.legend(["Estimate", "Ground truth"])
+    plt.grid()
+    plt.ylabel("East [m]")
+
+    gt, est, time = interpolate_1D_arrays(r2d * ground_truth.gt_angels[:, 2], r2d * euler_angels[:, 2], gt_time, time_steps)
+    print("Error Yaw:", absoluteError(gt, est))
+
+    plt.subplot(313)
+    plt.plot(time, est)
+    plt.plot(time, gt)
+    plt.legend(["Estimate", "Ground truth"])
+    plt.grid()
+    plt.ylabel("Yaw [deg]")
+
+
 def plot_threedof(position, euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]
@@ -116,25 +187,32 @@ def plot_threedof(position, euler_angels, ground_truth, time_steps):
 
     r2d = 180/np.pi
 
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0, index:], position[:, 0], gt_time, time_steps)
+    print("Error North:", absoluteError(gt, est))
     plt.suptitle("Positions")
     plt.subplot(311)
-    plt.plot(time_steps, position[:, 0])
-    plt.plot(gt_time, ground_truth.gt_transelation[0, index:])
+    plt.plot(time, est)
+    plt.plot(time, gt)
     plt.legend(["Estimate", "Ground truth"])
 
     plt.grid()
     plt.ylabel("North [m]")
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1, index:], position[:, 1], gt_time, time_steps)
+    print("Error East:", absoluteError(gt, est))
 
     plt.subplot(312)
-    plt.plot(time_steps, position[:, 1])
-    plt.plot(gt_time, ground_truth.gt_transelation[1, index:])
+    plt.plot(time, est)
+    plt.plot(time, gt)
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("East [m]")
 
+    gt, est, time = interpolate_1D_arrays(r2d * ground_truth.gt_angels[index:, 2], r2d * euler_angels[:, 2], gt_time, time_steps)
+    print("Error Yaw:", absoluteError(gt, est))
+
     plt.subplot(313)
-    plt.plot(time_steps, r2d * euler_angels[:, 2])
-    plt.plot(gt_time, r2d * ground_truth.gt_angels[index:, 2])
+    plt.plot(time, est)
+    plt.plot(time, gt)
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Yaw [deg]")

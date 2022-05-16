@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2
 import seaborn as sns
 from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
@@ -299,13 +299,15 @@ class GtSAMTest:
             positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
 
         print("\n-- Plot pose")
-        plt.figure(1)
-        plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
-            result, self.landmarks_variables.values()), self.ground_truth)
-        plt.figure(2)
-        plot_position(positions, self.ground_truth, self.time_stamps)
-        plt.figure(3)
-        plot_angels(eulers, self.ground_truth, self.time_stamps)
+        # plt.figure(1)
+        # plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
+        #    result, self.landmarks_variables.values()), self.ground_truth)
+        # plt.figure(2)
+        #plot_position(positions, self.ground_truth, self.time_stamps)
+        # plt.figure(3)
+        #plot_angels(eulers, self.ground_truth, self.time_stamps)
+        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+
         plt.show()
 
 
