@@ -104,6 +104,42 @@ def convert_to_body(ground_truth):
     return np.array(body_pos)
 
 
+def plot_threedof(position, euler_angels, ground_truth, time_steps):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps -= time_steps[0]
+
+    gt_time = ground_truth.time
+    index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    gt_time = gt_time[index:]
+    gt_time -= gt_time[0]
+
+    r2d = 180/np.pi
+
+    plt.suptitle("Positions")
+    plt.subplot(311)
+    plt.plot(time_steps, position[:, 0])
+    plt.plot(gt_time, ground_truth.gt_transelation[0, index:])
+    plt.legend(["Estimate", "Ground truth"])
+
+    plt.grid()
+    plt.ylabel("North [m]")
+
+    plt.subplot(312)
+    plt.plot(time_steps, position[:, 1])
+    plt.plot(gt_time, ground_truth.gt_transelation[1, index:])
+    plt.legend(["Estimate", "Ground truth"])
+    plt.grid()
+    plt.ylabel("East [m]")
+
+    plt.subplot(313)
+    plt.plot(time_steps, r2d * euler_angels[:, 2])
+    plt.plot(gt_time, r2d * ground_truth.gt_angels[index:, 2])
+    plt.legend(["Estimate", "Ground truth"])
+    plt.grid()
+    plt.ylabel("Yaw [deg]")
+
+
 def plot_angels(euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]

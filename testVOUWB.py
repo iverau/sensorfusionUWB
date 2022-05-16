@@ -183,10 +183,10 @@ class GtSAMTest:
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
         transelation = self.current_pose.rotation().matrix() @ transelation + self.current_pose.translation().reshape((3, 1))
-        rotation = self.current_pose.rotation().matrix() @ rotation
+        new_rotation = self.current_pose.rotation().matrix() @ rotation
         transelation[2] = -0.7
 
-        pose = gtsam.Pose3(gtsam.Rot3(rotation), transelation)
+        pose = gtsam.Pose3(gtsam.Rot3(new_rotation), transelation)
         self.graph_values.insert(self.pose_variables[-1], pose)
         self.factor_graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, gtsam.noiseModel.Diagonal.Sigmas(self.visual_odometry.noise_values)))
 

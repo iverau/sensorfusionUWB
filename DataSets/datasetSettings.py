@@ -53,7 +53,7 @@ class DatasetSettings_Trondheim1(DatasetSettingsBase):
 
 
 class DatasetSettings_Trondheim3(DatasetSettingsBase):
-    bag_start_time_offset = 630
+    bag_start_time_offset = 640
     _filename = "trondheim3_inn.bag"
     gt_time_offset = 18.42
     dataset_number = 3

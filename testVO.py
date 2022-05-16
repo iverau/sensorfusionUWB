@@ -5,8 +5,9 @@ from settings import DATASET_NUMBER
 import numpy as np
 from scipy.spatial.transform import Rotation as R
 from Sensors.CameraSensor.visualOdometry import VisualOdometry
-from Plotting.plot_gtsam import plot_position, plot_angels
+from Plotting.plot_gtsam import plot_position, plot_angels, plot_threedof
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 
 class CameraUwbImuFusion:
@@ -22,7 +23,7 @@ class CameraUwbImuFusion:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        # sns.set()
+        sns.set()
 
     def initialize_graph(self):
 
@@ -53,7 +54,7 @@ class CameraUwbImuFusion:
 
             iteration_number += 1
 
-            if iteration_number_cam > 1000:
+            if iteration_number_cam > 2000:
                 break
 
         states = self.visual_odometry.states
@@ -69,11 +70,11 @@ class CameraUwbImuFusion:
         pitch = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[1] for i in range(len(states))])
         yaw = np.array([R.from_matrix(states[i][:3, :3]).as_euler("xyz")[2] for i in range(len(states))])
 
-        plt.figure(2)
-        plot_position(np.array([north, east, down]).T, self.ground_truth, self.time_stamps, convert_NED=False)
-        plt.figure(3)
-        plot_angels(np.array([roll, pitch, yaw]).T, self.ground_truth, self.time_stamps)
-
+        # plt.figure(2)
+        #plot_position(np.array([north, east, down]).T, self.ground_truth, self.time_stamps, convert_NED=False)
+        # plt.figure(3)
+        #plot_angels(np.array([roll, pitch, yaw]).T, self.ground_truth, self.time_stamps)
+        plot_threedof(np.array([north, east, down]).T, np.array([roll, pitch, yaw]).T, self.ground_truth, self.time_stamps)
         plt.show()
 
 

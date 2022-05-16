@@ -1,3 +1,4 @@
+from unittest import TextTestRunner
 from Sensors.CameraSensor.camera import PinholeCamera
 import cv2
 import numpy as np
@@ -8,6 +9,24 @@ from scipy.sparse import lil_matrix
 from scipy.optimize import least_squares
 
 
+def rotate_x(radians):
+    c = np.cos(radians)
+    s = np.sin(radians)
+    return np.array([[1, 0, 0, 0],
+                     [0, c, -s, 0],
+                     [0, s, c, 0],
+                     [0, 0, 0, 1]])
+
+
+def rotate_y(radians):
+    c = np.cos(radians)
+    s = np.sin(radians)
+    return np.array([[c, 0, s, 0],
+                     [0, 1, 0, 0],
+                     [-s, 0, c, 0],
+                     [0, 0, 0, 1]])
+
+
 def rotate_z(radians):
     c = np.cos(radians)
     s = np.sin(radians)
@@ -15,6 +34,86 @@ def rotate_z(radians):
                      [s, c, 0, 0],
                      [0, 0, 1, 0],
                      [0, 0, 0, 1]])
+
+
+def translate(x, y, z):
+    return np.array([[1, 0, 0, x],
+                     [0, 1, 0, y],
+                     [0, 0, 1, z],
+                     [0, 0, 0, 1]])
+
+
+def project(K, X):
+    """
+    Computes the pinhole projection of a (3 or 4)xN array X using
+    the camera intrinsic matrix K. Returns the pixel coordinates
+    as an array of size 2xN.
+    """
+    uvw = K@X[:3, :]
+    uvw /= uvw[2, :]
+    return uvw[:2, :]
+
+
+def levenberg_marquardt(residualsfun, p0, num_iterations=100, finite_difference_epsilon=1e-5, mu=1e-3):
+    eps = finite_difference_epsilon
+    p = p0.copy()
+    mu_temp = mu
+    for iteration in range(num_iterations):
+        # Calculating the Jacobian of p using finite differences for the left part of J
+        J = []
+        for i in range(len(p)):
+            p_temp_plus = p.copy()
+            p_temp_minus = p.copy()
+            p_temp_plus[i] += eps
+            p_temp_minus[i] -= eps
+
+            J_i = (residualsfun(p_temp_plus) - residualsfun(p_temp_minus)) / (2*eps)
+            J.append(J_i)
+        J = np.array(J)
+        J = J.T
+
+        # Calculating the normal equations
+        A = J.T @ J
+        A += mu_temp * np.eye(A.shape[0])
+        b = - J.T @ residualsfun(p)
+
+        # Calculating delta by solving the modified normal equations
+        delta = np.linalg.solve(A, b)
+        if costFuncLinearization(residualsfun(p), J, delta) < costFunc(residualsfun(p)):
+            mu_temp /= 3
+
+        while(costFuncLinearization(residualsfun(p), J, delta) > costFunc(residualsfun(p))):
+            mu_temp *= 2
+            A = J.T @ J
+            A += mu_temp * np.eye(len(A))
+            b = - J.T @ residualsfun(p)
+
+            delta = np.linalg.solve(A, b)
+
+        # Improving p based on the desired search direction
+        p = p + delta
+        if (np.linalg.norm(delta) < 0.00001):
+            break
+
+    return p
+
+# Calculating the cost given the residuals (sum of squares)
+
+
+def costFunc(residuals):
+    cost = 0
+    for element in residuals:
+        cost += element**2
+    return cost
+
+# Calculating the cost given the residuals and the step based on delta (sum of squares)
+
+
+def costFuncLinearization(residuals, J, delta):
+    cost = 0
+    for i in range(len(residuals)):
+        cost += (residuals[i] + J[i, :] @ delta)**2
+    return cost
 
 
 def getCommonImagePoints(imageIndexes, kp1, kp2):
@@ -189,6 +288,19 @@ class VisualOdometry:
         self.t = np.zeros((3, 1))
         self.noise_counter = 1
 
+    def residualFunction(self, uv, p, XY01):
+        r = np.empty(2*uv.shape[1])
+        uv_hat = project(self.camera.K, self.rotationMatrix(p)[:3] @ XY01)
+        r[:uv.shape[1]] = (uv_hat[0] - uv[0])
+        r[uv.shape[1]:] = (uv_hat[1] - uv[1])
+        return r**2
+
+    # Create a rotation matrix based on pose p
+
+    def rotationMatrix(self, p):
+        rotation = rotate_x(p[0]) @ rotate_y(p[1]) @ rotate_z(p[2]) @ translate(p[3], p[4], p[5]) @ self.T
+        return rotation
+
     def track(self, image):
         image = self.camera.undistort_image(np.array(image))
 
@@ -211,17 +323,22 @@ class VisualOdometry:
             # plt.show()
             self.remove_outliers_with_ransac(imageIndexes)
             self.E = estimate_E(self.xy1, self.xy2)
-
             # Start extrating T
             self.X, T = self.get_best_point_corespondence()
+            p0 = np.array([0.0, 0.0, 0.0, 0.0, 0.0, 0.0])
+
+            def residualsfun(p):
+                return self.residualFunction(self.uv2, p, self.X)
+
+            p = levenberg_marquardt(residualsfun, p0)
+            T = rotate_x(p[0]) @ rotate_y(p[1]) @ rotate_z(p[2])  @ translate(p[3], p[4], p[5]) @ self.T
 
             t = -T[:3, 3].reshape((3, 1))
             R = T[:3, :3].T
+            #rotation = self.createYawRotation(R)
 
             # Kinematic equations for VO in camera frame
-            rotation = self.createYawRotation(self.R)
-
-            self.t = self.scale * rotation @ t + self.t
+            self.t = self.scale * self.R @ t + self.t
             self.R = self.R @ R
             rotation = self.body_t_cam @ self.R @ self.body_t_cam.T
             rotation = self.createYawRotation(rotation)
