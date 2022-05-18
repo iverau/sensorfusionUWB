@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot, ATE
 import seaborn as sns
 from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
@@ -47,7 +47,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        # sns.set()
+        sns.set()
 
     def initialize_graph(self):
 
@@ -255,8 +255,9 @@ class GtSAMTest:
             # TODO lage nye states ved hver camera måling
 
             if measurement.measurement_type.value == "UWB":
-                if not (300 < len(self.pose_variables) < 500):
-                    self.add_UWB_to_graph(measurement)
+                # if not (300 < len(self.pose_variables) < 500):
+                #    self.add_UWB_to_graph(measurement)
+                self.add_UWB_to_graph(measurement)
 
             if measurement.measurement_type.value == "Camera":
                 if self.prev_image_state is None:
@@ -299,6 +300,8 @@ class GtSAMTest:
         for index in range(len(positions[length_of_preinitialization:])):
             positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
 
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
+
         print("\n-- Plot pose")
         # plt.figure(1)
         # plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
@@ -307,7 +310,13 @@ class GtSAMTest:
         #plot_position(positions, self.ground_truth, self.time_stamps)
         # plt.figure(3)
         #plot_angels(eulers, self.ground_truth, self.time_stamps)
+        plt.figure(1)
         plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(2)
+        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(3)
+        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.show()
 
         plt.show()
 
