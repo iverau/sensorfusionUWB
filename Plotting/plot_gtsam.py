@@ -262,6 +262,28 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     plt.ylabel("Yaw [deg]")
 
 
+def ATE(position, ground_truth, time_steps):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps -= time_steps[0] + 1
+
+    gt_time = ground_truth.time
+    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    #gt_time = gt_time[index:]
+    gt_time -= gt_time[0]
+    gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+
+    estimate_traj = np.array([estx, esty])
+    gt_traj = np.array([gtx, gty])
+
+    residual_traj = estimate_traj - gt_traj
+    sum_value = 0
+    for element in residual_traj.T:
+        sum_value += np.inner(element, element)
+    return np.sqrt(sum_value/len(residual_traj.T))
+
+
 def new_xy_plot(position, euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]
@@ -274,7 +296,7 @@ def new_xy_plot(position, euler_angels, ground_truth, time_steps):
     gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
     gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
 
-    plt.suptitle("Horisontal Trajectory")
+    plt.suptitle("Horizontal Trajectory")
     plt.plot(estx, esty)
     plt.plot(gtx, gty)
     plt.legend(["Estimate", "Ground truth"])

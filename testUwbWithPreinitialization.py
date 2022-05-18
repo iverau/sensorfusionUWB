@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot, ATE
 import seaborn as sns
 
 from uwbPreinitializationTuning import *
@@ -333,6 +333,7 @@ class GtSAMTest:
             positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
 
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
 
         print("\n-- Plot pose")
         # plt.figure(1)
@@ -355,6 +356,8 @@ class GtSAMTest:
         plt.figure(3)
         new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
         plt.show()
+
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
 
 
 testing = GtSAMTest()
