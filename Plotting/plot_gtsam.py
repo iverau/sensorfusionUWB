@@ -19,7 +19,7 @@ def absoluteError(ground_truth, estimate):
 
 
 def get_common_time_frame(time_gt, time_orb, resolution):
-    return np.linspace(max(time_gt[0], time_orb[0]), min(time_orb[-1], time_gt[-1]), resolution)
+    return np.linspace(max(time_gt[0], time_orb[0] + 10), min(time_orb[-1], time_gt[-1]), resolution)
 
 
 def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=1000):
@@ -135,7 +135,7 @@ def convert_to_body(ground_truth):
 def plot_threedof2(position, euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]
-    time_steps -= time_steps[0]
+    time_steps -= time_steps[0] + 1
 
     gt_time = ground_truth.time
     #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
@@ -146,7 +146,7 @@ def plot_threedof2(position, euler_angels, ground_truth, time_steps):
 
     gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
     print("Error North:", absoluteError(gt, est))
-    plt.suptitle("Positions")
+    plt.suptitle("Pose")
     plt.subplot(311)
     plt.plot(time, est)
     plt.plot(time, gt)
@@ -189,7 +189,7 @@ def plot_threedof(position, euler_angels, ground_truth, time_steps):
 
     gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0, index:], position[:, 0], gt_time, time_steps)
     print("Error North:", absoluteError(gt, est))
-    plt.suptitle("Positions")
+    plt.suptitle("Pose")
     plt.subplot(311)
     plt.plot(time, est)
     plt.plot(time, gt)
@@ -214,6 +214,50 @@ def plot_threedof(position, euler_angels, ground_truth, time_steps):
     plt.plot(time, est)
     plt.plot(time, gt)
     plt.legend(["Estimate", "Ground truth"])
+    plt.grid()
+    plt.ylabel("Yaw [deg]")
+
+
+def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps -= time_steps[0] + 1
+
+    gt_time = ground_truth.time
+    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    #gt_time = gt_time[index:]
+    gt_time -= gt_time[0]
+
+    r2d = 180/np.pi
+
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    #print("Error North:", absoluteError(gt, est))
+    est = abs(est - gt)
+    plt.suptitle("Pose Error")
+    plt.subplot(311)
+    plt.plot(time, est)
+    #plt.plot(time, gt)
+    plt.legend(["Error"])
+
+    plt.grid()
+    plt.ylabel("North [m]")
+    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+    #print("Error East:", absoluteError(gt, est))
+    est = abs(est - gt)
+    plt.subplot(312)
+    plt.plot(time, est)
+    #plt.plot(time, gt)
+    plt.legend(["Error"])
+    plt.grid()
+    plt.ylabel("East [m]")
+
+    gt, est, time = interpolate_1D_arrays(r2d * ground_truth.gt_angels[:, 2], r2d * euler_angels[:, 2], gt_time, time_steps)
+    #print("Error Yaw:", absoluteError(gt, est))
+    est = abs(est - gt)
+    plt.subplot(313)
+    plt.plot(time, est)
+    #plt.plot(time, gt)
+    plt.legend(["Error"])
     plt.grid()
     plt.ylabel("Yaw [deg]")
 

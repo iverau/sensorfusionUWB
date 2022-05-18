@@ -2,7 +2,7 @@ import numpy as np
 
 # Prior noises
 PRIOR_POSE_SIGMAS = np.array(
-    [1e-15, 1e-15, 1e-5, 1e-3, 1e-3, 1e-10])  # rx, ry, rz, x, y, z
+    [1e-15, 1e-15, 1e-5, 1e-7, 1e-7, 1e-10])  # rx, ry, rz, x, y, z
 PRIOR_VEL_SIGMAS = np.array([0.0001, 0.0001, 0.0001])
 PRIOR_BIAS_SIGMAS = np.array([5e-12, 5e-12, 5e-12, 5e-7, 5e-7, 5e-7])
 
@@ -18,13 +18,13 @@ UWB_PRIOR_POSITIONING_NOISE = 1e-32
 # It is scalled with number of measurements
 VELOCITY_SIGMAS = np.array([0.5, 0.5, 0.01])
 # It is scalled with number of measurements
-POSE_SIGMAS = np.array([0.000175, 0.000175, 0.01, 1, 1, 0.001])
+POSE_SIGMAS = np.array([0.000175, 0.000175, 0.01, 4, 4, 0.001])
 # pre-integration parameters can be found in the file Sensors/Imu.py
 
 # GNSS tuning
 GNSS_PREINIT_ENABLED = True
-GNSS_NOISE = np.array([0.8, 0.8, 0.5, 4, 4, 5])
-GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
+GNSS_NOISE = np.array([0.8, 0.8, 0.5, 1, 1, 5])
+GNSS_VELOCITY_SIGMAS = np.array([0.5, 0.5, 0.01])
 
 # Other constants
 NUMBER_OF_RUNNING_ITERATIONS = 3000  # Full traj is about 3000

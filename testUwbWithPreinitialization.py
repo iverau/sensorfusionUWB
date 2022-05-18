@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error
 import seaborn as sns
 
 from uwbPreinitializationTuning import *
@@ -45,7 +45,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        # sns.set()
+        sns.set()
 
     def initialize_graph(self):
 
@@ -281,8 +281,10 @@ class GtSAMTest:
                     imu_measurements = []
                     self.isam.update()
 
-                if not (700 < len(self.pose_variables) < 1100):
-                    self.add_UWB_to_graph(measurement)
+                self.add_UWB_to_graph(measurement)
+
+                # if not (700 < len(self.pose_variables) < 1100):
+                #    self.add_UWB_to_graph(measurement)
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
@@ -346,8 +348,10 @@ class GtSAMTest:
         #plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
         # plt.figure(6)
         #plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
+        plt.figure(1)
         plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
-
+        plt.figure(2)
+        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
         plt.show()
 
 
