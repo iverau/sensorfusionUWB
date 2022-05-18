@@ -266,6 +266,8 @@ class GtSAMTest:
 
         self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
+        self.visual_odometry.update_scale(0.25)
+
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value != "IMU":
@@ -306,6 +308,7 @@ class GtSAMTest:
 
                 # Reset the graph and initial values
                 self.reset_pose_graph_variables()
+                self.visual_odometry.reset_initial_conditions()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
                 self.current_velocity = result.atVector(self.velocity_variables[-1])

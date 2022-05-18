@@ -255,7 +255,8 @@ class GtSAMTest:
             # TODO lage nye states ved hver camera måling
 
             if measurement.measurement_type.value == "UWB":
-                self.add_UWB_to_graph(measurement)
+                if not (300 < len(self.pose_variables) < 500):
+                    self.add_UWB_to_graph(measurement)
 
             if measurement.measurement_type.value == "Camera":
                 if self.prev_image_state is None:
