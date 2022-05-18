@@ -146,7 +146,7 @@ def plot_threedof2(position, euler_angels, ground_truth, time_steps):
 
     gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
     print("Error North:", absoluteError(gt, est))
-    plt.suptitle("Pose")
+    plt.suptitle("Pose Estimate and Ground Truth")
     plt.subplot(311)
     plt.plot(time, est)
     plt.plot(time, gt)
@@ -260,6 +260,24 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     plt.legend(["Error"])
     plt.grid()
     plt.ylabel("Yaw [deg]")
+
+
+def new_xy_plot(position, euler_angels, ground_truth, time_steps):
+    time_steps = np.array(time_steps)
+    time_steps[1:] -= time_steps[1] - time_steps[0]
+    time_steps -= time_steps[0] + 1
+
+    gt_time = ground_truth.time
+    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    #gt_time = gt_time[index:]
+    gt_time -= gt_time[0]
+    gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+
+    plt.suptitle("Horisontal Trajectory")
+    plt.plot(estx, esty)
+    plt.plot(gtx, gty)
+    plt.legend(["Estimate", "Ground truth"])
 
 
 def plot_angels(euler_angels, ground_truth, time_steps):

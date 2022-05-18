@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot
 import seaborn as sns
 
 from uwbPreinitializationTuning import *
@@ -352,6 +352,8 @@ class GtSAMTest:
         plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
         plt.figure(2)
         plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(3)
+        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
         plt.show()
 
 
