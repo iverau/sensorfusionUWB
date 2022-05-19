@@ -284,7 +284,7 @@ class VisualOdometry:
         return X, T
 
     def reset_initial_conditions(self):
-        self.R = np.eye(3)
+        #self.R = np.eye(3)
         self.t = np.zeros((3, 1))
         self.noise_counter = 1
 

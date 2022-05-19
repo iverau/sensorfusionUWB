@@ -87,6 +87,7 @@ class GtSAMTest:
         self.time_stamps.append(self.ground_truth.time[0])
         self.prev_image_state = None
         self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
+        self.temp_value = 0
 
     def add_UWB_to_graph(self, uwb_measurement):
 
@@ -183,7 +184,13 @@ class GtSAMTest:
         self.imu_bias_variables.append(B(len(self.imu_bias_variables)))
 
         transelation = self.current_pose.rotation().matrix() @ transelation + self.current_pose.translation().reshape((3, 1))
-        new_rotation = self.current_pose.rotation().matrix() @ rotation
+        new_rotation = self.initial_pose.rotation().matrix() @ rotation
+        #print("Init rotation", R.from_matrix(self.initial_pose.rotation().matrix()).as_euler("xyz", degrees=True))
+
+        #print("New rotation", R.from_matrix(new_rotation).as_euler("xyz", degrees=True))
+        # if self.temp_value == 1:
+        #    exit()
+        #self.temp_value += 1
         transelation[2] = -0.7
 
         pose = gtsam.Pose3(gtsam.Rot3(new_rotation), transelation)
@@ -241,9 +248,11 @@ class GtSAMTest:
                     self.current_velocity = result.atVector(self.velocity_variables[-1])
                     self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
                     gnss_counter = 0
+                    self.initial_pose = result.atPose3(self.pose_variables[-1])
 
         length_of_preinitialization = len(self.pose_variables)
         self.visual_odometry.reset_initial_conditions()
+        self.visual_odometry.R = np.eye(3)
         gnssTrajectoryLength = self.calculateTrajectoryLength(self.ground_truth.initial_pose()[:3].T, self.current_pose.translation()[:3].T)
         scale = self.calculateScale(gnssTrajectoryLength)
         self.visual_odometry.update_scale(0.25)
@@ -316,8 +325,6 @@ class GtSAMTest:
         plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
         plt.figure(3)
         new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
-        plt.show()
-
         plt.show()
 
 
