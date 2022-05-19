@@ -323,6 +323,7 @@ class GtSAMTest:
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
         uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
+        #uwb_offset = np.array([3.87, -1.84, -1.11]).reshape((3, 1))
 
         for index in range(len(positions[length_of_preinitialization:])):
             positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()

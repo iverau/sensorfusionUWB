@@ -45,7 +45,7 @@ class DatasetSettingsBase:
 class DatasetSettings_Trondheim1(DatasetSettingsBase):
     bag_start_time_offset = 930
     _filename = "trondheim1_inn.bag"
-    gt_time_offset = 18.24
+    gt_time_offset = 17.37
     dataset_number = 1
 
     def __init__(self):
