@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof_error, plot_threedof2, new_xy_plot, ATE
 import seaborn as sns
 from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
@@ -46,7 +46,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        # sns.set()
+        sns.set()
 
     def initialize_graph(self):
 
@@ -267,6 +267,7 @@ class GtSAMTest:
         self.visual_odometry = VisualOdometry(noise_values=VO_SIGMAS)
         imu_measurements = []
         self.visual_odometry.update_scale(0.25)
+        length_of_preinitialization = len(self.pose_variables)
 
         for measurement in self.dataset.generate_measurements():
 
@@ -321,9 +322,23 @@ class GtSAMTest:
         self.isam.update(self.factor_graph, self.graph_values)
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
+        uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
+
+        for index in range(len(positions[length_of_preinitialization:])):
+            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
 
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
 
+        plt.figure(1)
+        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(2)
+        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(3)
+        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.show()
+
+        """
         print("\n-- Plot pose")
         # plt.figure(1)
         plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
@@ -338,6 +353,7 @@ class GtSAMTest:
         plot_vel(gtsam_velocity_from_results(
             result, self.velocity_variables), self.time_stamps, self.ground_truth)
         plt.show()
+        """
 
 
 testing = GtSAMTest()

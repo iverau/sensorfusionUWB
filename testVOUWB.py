@@ -272,7 +272,7 @@ class GtSAMTest:
             print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
             # Update ISAM with graph and initial_values
-            if len(self.uwb_counter) == 2:
+            if len(self.uwb_counter) == 1:
 
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()

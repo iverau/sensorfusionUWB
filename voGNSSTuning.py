@@ -25,7 +25,7 @@ VO_SIGMAS = np.array([1e-5, 1e-5, 1e-2, 3e-1, 3e-1, 1e-10])  # rx, ry, rz, x, y,
 
 # GNSS tuning
 GNSS_PREINIT_ENABLED = True
-GNSS_NOISE = np.array([0.8, 0.8, 0.5, 4, 4, 5])
+GNSS_NOISE = np.array([0.8, 0.8, 0.5, 1, 4, 5])
 GNSS_NOISE_RUNNING = np.array([0.8, 0.8, 1.5, 1.0, 1.0, 5])
 
 GNSS_VELOCITY_SIGMAS = np.array([0.1, 0.1, 0.01])
