@@ -10,7 +10,7 @@ from scipy.spatial.transform import Rotation as R
 import matplotlib.pyplot as plt
 
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_pose_to_numpy, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory_old
+from Plotting.plot_gtsam import plot_threedof2, plot_threedof_error, ATE, new_xy_plot
 
 
 class TrilaterationEstimates:
@@ -32,13 +32,13 @@ class TrilaterationEstimates:
         self.imu_bias_variables = []
         self.landmarks_variables = {}
         self.uwb_counter = 0
+        self.time_stamps = []
 
         # Setting up gtsam values
         self.graph_values = gtsam.Values()
         self.factor_graph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
         print(self.ground_truth.initial_pose())
-
 
     def initialize_graph(self):
 
@@ -59,11 +59,11 @@ class TrilaterationEstimates:
         R_init = R.from_euler("xyz", self.ground_truth.initial_pose()[:3], degrees=False).as_matrix()
         T_init = self.ground_truth.initial_pose()[3:]
 
-        # Set the prior states 
-        #TODO: Fix the naming convention here
+        # Set the prior states
+        # TODO: Fix the naming convention here
         self.current_pose = gtsam.Pose3(gtsam.Rot3(R_init), T_init)
         self.current_velocity = self.ground_truth.initial_velocity()
-        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,))) 
+        self.current_bias = gtsam.imuBias.ConstantBias(np.zeros((3,)), np.zeros((3,)))
 
         print(self.current_pose)
 
@@ -74,6 +74,7 @@ class TrilaterationEstimates:
         self.graph_values.insert(X1, self.current_pose)
         self.graph_values.insert(V1, self.current_velocity)
         self.graph_values.insert(B1, self.current_bias)
+        self.time_stamps.append(self.ground_truth.time[0])
 
     def reset_pose_graph_variables(self):
         self.graph_values = gtsam.Values()
@@ -107,7 +108,7 @@ class TrilaterationEstimates:
             self.imu_bias_variables[-2],
             integrated_measurement
         ))
-        
+
         # Add bias constraints
         self.factor_graph.add(
             gtsam.BetweenFactorConstantBias(
@@ -117,29 +118,29 @@ class TrilaterationEstimates:
                 gtsam.noiseModel.Diagonal.Sigmas(np.sqrt(len(imu_measurements)) * self.imu_params.sigmaBetweenBias)
             )
         )
-    
+
     def add_UWB_to_graph(self, graph, uwb_measurement):
         pose = gtsam.Pose3(self.current_pose.rotation(), uwb_measurement.position)
         graph.add(gtsam.PriorFactorPose3(self.pose_variables[-1], pose, uwb_measurement.noise_model))
-        
+
         return pose
 
     def run(self):
         imu_measurements = []
         for measurement in self.dataset.generate_trilateration_combo_measurements():
-            # TODO: Få lagt inn rett transformasjoner 
-
+            # TODO: Få lagt inn rett transformasjoner
 
             # If the measurment is an UWB measurement, calculate the preintegrated measurement and add the UWB measurment
             if measurement.measurement_type.value == "UWB_Tri":
                 # Add the imu measurment if present
                 if imu_measurements:
+                    self.time_stamps.append(measurement.time)
                     integrated_measurement = self.pre_integrate_imu_measurement(imu_measurements)
-                    self.add_imu_factor(integrated_measurement, imu_measurements) 
+                    self.add_imu_factor(integrated_measurement, imu_measurements)
 
                     # Reset the IMU measurement list
                     imu_measurements = []
-                
+
                 # Add the UWB pose
                 uwb_pose = self.add_UWB_to_graph(self.factor_graph, measurement)
                 self.uwb_counter += 1
@@ -147,14 +148,12 @@ class TrilaterationEstimates:
                 self.graph_values.insert(self.velocity_variables[-1], self.current_velocity)
                 self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
-
             # Store the IMU factors unntil a new UWB measurement is recieved
             elif measurement.measurement_type.value == "IMU":
                 imu_measurements.append(measurement)
-                
-        
+
             # Update ISAM with graph and initial_values
-            if self.uwb_counter == 2:
+            if self.uwb_counter == 3:
                 self.isam.update(self.factor_graph, self.graph_values)
                 result = self.isam.calculateEstimate()
 
@@ -163,17 +162,18 @@ class TrilaterationEstimates:
                 self.current_velocity = result.atVector(self.velocity_variables[-1])
                 self.current_bias = result.atConstantBias(self.imu_bias_variables[-1])
 
-                # TODO: Fix this bug
-                if len(self.imu_bias_variables)  == 569:
-                    break
-
-                
         positions, eulers = gtsam_pose_from_result(result)
         print("\n-- Plot pose")
-        print("Poses ",gtsam_landmark_from_results(result, self.landmarks_variables))
+        print("Poses ", gtsam_landmark_from_results(result, self.landmarks_variables))
+
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
 
         plt.figure(1)
-        plot_horizontal_trajectory_old(positions, [-100, 20], [-160, -65], self.landmarks_variables)
+        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(2)
+        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plt.figure(3)
+        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
         plt.show()
 
 
