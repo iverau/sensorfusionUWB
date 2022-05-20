@@ -231,25 +231,35 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     r2d = 180/np.pi
 
     gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
+    gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+
+    estimate_traj = np.array([estx, esty])
+    gt_traj = np.array([gtx, gty])
+    residual_traj = gt_traj - estimate_traj
+    residual_traj = np.array([np.linalg.norm(element) for element in residual_traj.T])
     #print("Error North:", absoluteError(gt, est))
     est = abs(est - gt)
     plt.suptitle("Pose Error")
     plt.subplot(311)
-    plt.plot(time, est)
+    plt.plot(time, residual_traj)
     #plt.plot(time, gt)
-    plt.legend(["Error"])
+    plt.legend(["Absolute error"])
 
     plt.grid()
-    plt.ylabel("North [m]")
-    gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+    plt.ylabel("Absolute error [m]")
+    #gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
     #print("Error East:", absoluteError(gt, est))
-    est = abs(est - gt)
+    estx = abs(estx - gtx)
+    esty = abs(esty - gty)
+
     plt.subplot(312)
-    plt.plot(time, est)
+    plt.plot(time, estx)
+    plt.plot(time, esty)
     #plt.plot(time, gt)
-    plt.legend(["Error"])
+    plt.legend(["Error in North", "Error in East"])
     plt.grid()
-    plt.ylabel("East [m]")
+    plt.ylabel("Error [m]")
 
     gt, est, time = interpolate_1D_arrays(r2d * ground_truth.gt_angels[:, 2], r2d * euler_angels[:, 2], gt_time, time_steps)
     #print("Error Yaw:", absoluteError(gt, est))
@@ -257,9 +267,9 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     plt.subplot(313)
     plt.plot(time, est)
     #plt.plot(time, gt)
-    plt.legend(["Error"])
+    plt.legend(["Error in Yaw"])
     plt.grid()
-    plt.ylabel("Yaw [deg]")
+    plt.ylabel("Error [deg]")
 
 
 def ATE(position, ground_truth, time_steps):
