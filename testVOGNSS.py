@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_threedof2, plot_threedof_error, new_xy_plot
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_threedof2, plot_threedof_error, new_xy_plot, ATE
 import seaborn as sns
 from Sensors.CameraSensor.visualOdometry import VisualOdometry
 
@@ -266,13 +266,13 @@ class GtSAMTest:
         result = self.isam.calculateBestEstimate()
         positions, eulers = gtsam_pose_from_result(result)
         uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
-        gnss_offset = np.array([3.015, 0, -1.36])
+        gnss_offset = np.array([3.015, 0, -1.10]).reshape((3, 1))
 
         # for index in range(len(positions[:length_of_preinitialization])):
         #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
 
-        for index in range(len(positions[length_of_preinitialization:])):
-            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
+        # for index in range(len(positions[length_of_preinitialization:])):
+        #    positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ gnss_offset).flatten()
 
         print("\n-- Plot pose")
         # plt.figure(1)
@@ -282,6 +282,8 @@ class GtSAMTest:
         #plot_position(positions, self.ground_truth, self.time_stamps)
         # plt.figure(3)
         #lot_angels(eulers, self.ground_truth, self.time_stamps)
+        print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
+
         plt.figure(1)
 
         plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
