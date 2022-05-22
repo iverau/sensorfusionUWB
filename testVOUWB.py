@@ -301,6 +301,7 @@ class GtSAMTest:
         positions, eulers = gtsam_pose_from_result(result)
 
         uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
+        uwb_offset = np.array([3.87, -1.84, -1.11]).reshape((3, 1))
         gnss_offset = np.array([3.015, 0, -1.36])
 
         # for index in range(len(positions[:length_of_preinitialization])):

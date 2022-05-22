@@ -19,7 +19,7 @@ def absoluteError(ground_truth, estimate):
 
 
 def get_common_time_frame(time_gt, time_orb, resolution):
-    return np.linspace(max(time_gt[0], time_orb[0] + 10), min(time_orb[-1], time_gt[-1]), resolution)
+    return np.linspace(max(time_gt[0], time_orb[0]), min(time_orb[-1], time_gt[-1]), resolution)
 
 
 def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=1000):
@@ -28,7 +28,7 @@ def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=100
 
     time_frame = get_common_time_frame(time_gt, time_orb, resolution)
 
-    return f1(time_frame), f2(time_frame), time_frame
+    return f1(time_frame), f2(time_frame), time_frame - time_frame[0]
 
 
 def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, ground_truth):
