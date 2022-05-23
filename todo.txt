@@ -16,3 +16,15 @@ uwb-range only
 uwb-range gps imu
 Ta med tidsestimater (fint plott)
 
+
+
+Pickling stuff:
+- 700-1000: 10 sec
+
+
+UWB-measures:
+- 0 sec: 0.42
+- 5 sec: 0.43
+- 10 sec: 0.47
+- 20 sec: 1.75
+- 30 sec: 17.2 

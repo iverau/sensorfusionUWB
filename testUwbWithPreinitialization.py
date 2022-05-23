@@ -266,6 +266,7 @@ class GtSAMTest:
                     gnss_counter = 0
 
         imu_measurements = []
+        first = None
         length_of_preinitialization = len(self.pose_variables)
         for measurement in self.dataset.generate_measurements():
 
@@ -283,16 +284,21 @@ class GtSAMTest:
 
                 # self.add_UWB_to_graph(measurement)
 
-                if not (700 < len(self.pose_variables) < 1100):
+                if not (700 < len(self.pose_variables) < 1600):
                     self.add_UWB_to_graph(measurement)
+                else:
+                    if first is None:
+                        first = measurement.time
+                    else:
+                        print((measurement.time - first)/(10**9))
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
                 imu_measurements.append(measurement)
 
             iteration_number += 1
-            print("Iteration", iteration_number, len(
-                self.pose_variables), len(self.time_stamps))
+            # print("Iteration", iteration_number, len(
+            #    self.pose_variables), len(self.time_stamps))
 
             # Update ISAM with graph and initial_values
             if len(self.uwb_counter) == 3:
