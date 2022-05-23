@@ -226,6 +226,7 @@ class GtSAMTest:
         # Dummy variable for storing imu measurements
         imu_measurements = []
         iteration_number = 0
+        first = None
         if GNSS_PREINIT_ENABLED:
             gnss_counter = 0
             # 10 secs of GNSS
@@ -244,17 +245,25 @@ class GtSAMTest:
                         self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_pose.rotation().matrix()
                                               @ self.navstate.velocity(), gtsam.noiseModel.Diagonal.Sigmas(GNSS_VELOCITY_SIGMAS)))
                         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
-
-                    gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
-                    gnss_counter += 1
-                    self.graph_values.insert(self.pose_variables[-1], gnss_pose)
-                    self.graph_values.insert(self.velocity_variables[-1], self.current_pose.rotation().matrix() @ self.navstate.velocity())
-                    self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
+                    if not (20 < len(self.pose_variables) < 20):
+                        gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
+                        gnss_counter += 1
+                        self.graph_values.insert(self.pose_variables[-1], gnss_pose)
+                        self.graph_values.insert(self.velocity_variables[-1], self.current_pose.rotation().matrix() @ self.navstate.velocity())
+                        self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
+                    else:
+                        if first is None:
+                            first = measurement.time
+                        else:
+                            print((measurement.time - first)/(10**9))
+                        self.graph_values.insert(self.pose_variables[-1], self.navstate.pose())
+                        self.graph_values.insert(self.velocity_variables[-1], self.current_pose.rotation().matrix() @ self.navstate.velocity())
+                        self.graph_values.insert(self.imu_bias_variables[-1], self.current_bias)
 
                 elif measurement.measurement_type.value == "IMU":
                     imu_measurements.append(measurement)
                 iteration_number += 1
-                print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
+                #print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 
                 if gnss_counter == 1:
                     self.isam.update(self.factor_graph, self.graph_values)

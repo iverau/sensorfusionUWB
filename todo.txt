@@ -20,7 +20,18 @@ Ta med tidsestimater (fint plott)
 
 Pickling stuff:
 - 700-1000: 10 sec
+150 er 5 sekunder på uwb
+1 er 1 sek på gnss
 
+
+
+
+GNSS-measures: 
+- 0 sec: 0.33
+- 5 sec: 0.41
+- 10 sec: 1.0
+- 20 sec: 3.2
+- 30 sec: 7.01
 
 UWB-measures:
 - 0 sec: 0.42

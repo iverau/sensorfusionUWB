@@ -266,7 +266,7 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     #print("Error Yaw:", absoluteError(gt, est))
     est = abs(est - gt)
 
-    with open("uwb_dropout_30.pickle", "wb") as f:
+    with open("gnss_dropout_0.pickle", "wb") as f:
         pick.dump([residual_traj, est, time], f)
 
     plt.subplot(313)
