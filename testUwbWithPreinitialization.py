@@ -281,10 +281,10 @@ class GtSAMTest:
                     imu_measurements = []
                     self.isam.update()
 
-                self.add_UWB_to_graph(measurement)
+                # self.add_UWB_to_graph(measurement)
 
-                # if not (700 < len(self.pose_variables) < 1100):
-                #    self.add_UWB_to_graph(measurement)
+                if not (700 < len(self.pose_variables) < 1100):
+                    self.add_UWB_to_graph(measurement)
 
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
