@@ -19,8 +19,7 @@ class ROSData:
 
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(self.bag.get_start_time(
-        ) + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
 
@@ -88,8 +87,7 @@ class RosDataTrilateration:
         print("Initialize ROS dataset number ", dataset_number, ".\n", end="")
 
         # Initializes the dataset settings
-        self.dataset_settings = RosDataTrilateration.select_dataset(
-            dataset_number)
+        self.dataset_settings = RosDataTrilateration.select_dataset(dataset_number)
 
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
