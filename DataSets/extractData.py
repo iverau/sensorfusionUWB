@@ -92,11 +92,10 @@ class RosDataTrilateration:
 
         # Initializes the dataset settings
         self.dataset_settings = RosDataTrilateration.select_dataset(dataset_number)
-
+        self.initialization_step_time = 0
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(
-            self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
+        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
         print("Starttime", self.bag_start_time)
@@ -108,6 +107,17 @@ class RosDataTrilateration:
             break
         self.bag_start_time = time
         return self.convert_GNSS_to_NED(data)
+
+    def generate_initialization_gnss_imu(self, actual_value=False):
+        if not actual_value:
+            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
+            end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        else:
+            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
+            end_time = self.bag_end_time
+        topics = ["/sentiboard/adis", "/ublox2/fix", "/camera/image_raw/compressed"]
+        for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
+            yield generate_measurement(topic, msg, t)
 
     def extract_ned_origin(self):
         data = scipy.io.loadmat(self.dataset_settings.ned_origin_filepath())
@@ -133,7 +143,7 @@ class RosDataTrilateration:
     def get_bag_end_time(self):
         if self.dataset_settings.bag_duration < 0:
             return rospy.Time(self.bag.get_end_time())
-        return rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.dataset_settings.bag_duration)
+        return rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.dataset_settings.bag_duration - 10)
 
     def generate_trilateration_combo_measurements(self):
         """
