@@ -267,9 +267,10 @@ class GtSAMTest:
 
         imu_measurements = []
         length_of_preinitialization = len(self.pose_variables)
+        omited_id = 1827
         for measurement in self.dataset.generate_measurements():
 
-            if measurement.measurement_type.value == "UWB":
+            if measurement.measurement_type.value == "UWB" and measurement.id != omited_id:
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
                     integrated_measurement = self.pre_integrate_imu_measurement(
@@ -337,24 +338,25 @@ class GtSAMTest:
 
         print("\n-- Plot pose")
         # plt.figure(1)
-        # plot_horizontal_trajectory(positions, [-200, 200], [-200, 200], gtsam_landmark_from_results(
-        #    result, self.landmarks_variables.values()), self.ground_truth)
+        plot_horizontal_trajectory(positions[length_of_preinitialization:], [-200, 200], [-200, 200], gtsam_landmark_from_results(
+            result, self.landmarks_variables.values()), self.ground_truth)
         # plt.figure(2)
-        #plot_position(positions, self.ground_truth, self.time_stamps)
+        # plot_position(positions, self.ground_truth, self.time_stamps)
         # plt.figure(3)
-        #plot_angels(eulers, self.ground_truth, self.time_stamps)
+        # plot_angels(eulers, self.ground_truth, self.time_stamps)
         # plt.figure(4)
         # plot_bias(biases)
         # plt.figure(5)
-        #plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
+        # plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
         # plt.figure(6)
-        #plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
-        plt.figure(1)
-        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
-        plt.figure(2)
-        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
-        plt.figure(3)
-        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        # plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
+
+        # plt.figure(1)
+        #plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        # plt.figure(2)
+        #plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        # plt.figure(3)
+        #new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
         plt.show()
 
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))

@@ -1,6 +1,7 @@
 import numpy as np
 import scipy.io
 
+
 class UWB_Ancors_Descriptor:
 
     AMOUNT_OF_BEACONS = 5
@@ -19,11 +20,12 @@ class UWB_Ancors_Descriptor:
     def __getitem__(self, key):
         return self.UWB_position_map[key]
 
-    def generate_beacon_data_path(self,id):
+    def generate_beacon_data_path(self, id):
         return f"DataSets/Beacondata/trondheim{self.dataset_number}/beacon{id}_time_fix.mat"
 
     def __repr__(self) -> str:
         return f"UWB_Ancors_Descriptor[Dataset_number = {self.dataset_number}, Amount_of_beacons = {self.AMOUNT_OF_BEACONS}]"
+
 
 class UWB_Position:
     def __init__(self, mat_file) -> None:
@@ -31,10 +33,11 @@ class UWB_Position:
         self.extract_coordinates(mat_file)
 
     def extract_coordinates(self, mat_file):
-        self.id =   mat_file["beacon"][0][0][0][0][0]
-        self.north =    mat_file["beacon"][0][0][1][0][0]
-        self.east =    mat_file["beacon"][0][0][2][0][0]
-        self.down =    mat_file["beacon"][0][0][3][0][0]
+        self.id = mat_file["beacon"][0][0][0][0][0]
+        self.north = mat_file["beacon"][0][0][1][0][0]
+        self.east = mat_file["beacon"][0][0][2][0][0]
+        self.down = mat_file["beacon"][0][0][3][0][0]
+        print(self.id, self.north, self.east, self.down)
 
     def position(self):
         return [self.north, self.east, self.down]

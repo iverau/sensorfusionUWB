@@ -33,29 +33,34 @@ def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=100
 
 def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, ground_truth):
     plt.suptitle("Horizontal trajectory")
-    #uwb_beacons = {7782220156096217088: [-0.545153  , -0.04282936,  1.49997155], 7782220156096217089: [-92.77930304,  -6.67807677,   0.91031529], 7782220156096217090: [-22.33896783, -22.76350421,   1.49969375], 7782220156096217091: [-55.43239422,  35.36695921,  -1.19977753], 7782220156096217092: [-82.20259541,   8.18208795,   0.91097657]}
+    uwb_beacons = {1827: [-0.545153, -0.04282936,  1.49997155], 840: [-92.77930304,  -6.67807677,   0.91031529], 1089: [
+        -22.33896783, -22.76350421,   1.49969375], 1252: [-55.43239422,  35.36695921,  -1.19977753], 1625: [-82.20259541,   8.18208795,   0.91097657]}
+    ATE = [0.47, 0.36, 0.46, 0.82, 0.41]
     x_list = []
     y_list = []
     print("UWB beacons", uwb_beacons)
-    for p in uwb_beacons.values():
+    for index, data in enumerate(zip(ATE, uwb_beacons.values())):
+        a, p = data
+        plt.scatter(p[1], p[0], color="red")
+        plt.text(p[1] + 0.5, p[0] + 0.5, f"{index + 1}: {a}", fontsize=15)
         x_list.append(p[1])
         y_list.append(p[0])
 
-    plt.scatter(x_list, y_list)
+    #plt.scatter(x_list, y_list)
+    #plt.text(np.array(x_list) + 0.3, np.array(y_list) + 0.3, ATE, fontsize=9)
     plt.plot(position_estimates[:, 1], position_estimates[:, 0], color="blue")
-    plt.plot(ground_truth.gt_transelation[1],
-             ground_truth.gt_transelation[0], color="red")
+    #plt.plot(ground_truth.gt_transelation[1], ground_truth.gt_transelation[0], color="red")
 
     plt.xlabel("East [m]")
     plt.ylabel("North [m]")
-    plt.legend(["Ground truth", "Estimates", "UWB beacons"])
+    plt.legend(["Estimates", "UWB beacons"])
     plt.grid()
 
 
 def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_variables):
     plt.suptitle("Horizontal trajectory")
-    uwb_beacons = {7782220156096217088: [-0.545153, -0.04282936,  1.49997155], 7782220156096217089: [-92.77930304,  -6.67807677,   0.91031529], 7782220156096217090: [
-        -22.33896783, -22.76350421,   1.49969375], 7782220156096217091: [-55.43239422,  35.36695921,  -1.19977753], 7782220156096217092: [-82.20259541,   8.18208795,   0.91097657]}
+    uwb_beacons = {1827: [-0.545153, -0.04282936,  1.49997155], 840: [-92.77930304,  -6.67807677,   0.91031529], 1089: [
+        -22.33896783, -22.76350421,   1.49969375], 1252: [-55.43239422,  35.36695921,  -1.19977753], 1625: [-82.20259541,   8.18208795,   0.91097657]}
     x_list = []
     y_list = []
     for p in uwb_beacons.values():
@@ -71,7 +76,7 @@ def plot_horizontal_trajectory_old(position_estimates, x_lim, y_lim, landmark_va
 
 
 def find_index_closest(time_array, start_time):
-    #temp_array = time_array - (time_array[0])
+    # temp_array = time_array - (time_array[0])
     return (np.abs(time_array - start_time)).argmin()
 
 
@@ -138,8 +143,8 @@ def plot_threedof2(position, euler_angels, ground_truth, time_steps):
     time_steps -= time_steps[0] + 1
 
     gt_time = ground_truth.time
-    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
-    #gt_time = gt_time[index:]
+    # index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    # gt_time = gt_time[index:]
     gt_time -= gt_time[0]
 
     r2d = 180/np.pi
@@ -224,8 +229,8 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     time_steps -= time_steps[0] + 1
 
     gt_time = ground_truth.time
-    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
-    #gt_time = gt_time[index:]
+    # index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    # gt_time = gt_time[index:]
     gt_time -= gt_time[0]
 
     r2d = 180/np.pi
@@ -238,35 +243,35 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     gt_traj = np.array([gtx, gty])
     residual_traj = gt_traj - estimate_traj
     residual_traj = np.array([np.linalg.norm(element) for element in residual_traj.T])
-    #print("Error North:", absoluteError(gt, est))
+    # print("Error North:", absoluteError(gt, est))
     est = abs(est - gt)
     plt.suptitle("Pose Error")
     plt.subplot(311)
     plt.plot(time, residual_traj)
-    #plt.plot(time, gt)
+    # plt.plot(time, gt)
     plt.legend(["Absolute error"])
 
     plt.grid()
     plt.ylabel("Absolute error [m]")
-    #gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
-    #print("Error East:", absoluteError(gt, est))
+    # gt, est, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
+    # print("Error East:", absoluteError(gt, est))
     estx = abs(estx - gtx)
     esty = abs(esty - gty)
 
     plt.subplot(312)
     plt.plot(time, estx)
     plt.plot(time, esty)
-    #plt.plot(time, gt)
+    # plt.plot(time, gt)
     plt.legend(["Error in North", "Error in East"])
     plt.grid()
     plt.ylabel("Error [m]")
 
     gt, est, time = interpolate_1D_arrays(r2d * ground_truth.gt_angels[:, 2], r2d * euler_angels[:, 2], gt_time, time_steps)
-    #print("Error Yaw:", absoluteError(gt, est))
+    # print("Error Yaw:", absoluteError(gt, est))
     est = abs(est - gt)
     plt.subplot(313)
     plt.plot(time, est)
-    #plt.plot(time, gt)
+    # plt.plot(time, gt)
     plt.legend(["Error in Yaw"])
     plt.grid()
     plt.ylabel("Error [deg]")
@@ -278,8 +283,8 @@ def ATE(position, ground_truth, time_steps):
     time_steps -= time_steps[0] + 1
 
     gt_time = ground_truth.time
-    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
-    #gt_time = gt_time[index:]
+    # index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    # gt_time = gt_time[index:]
     gt_time -= gt_time[0]
     gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
     gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
@@ -300,8 +305,8 @@ def new_xy_plot(position, euler_angels, ground_truth, time_steps):
     time_steps -= time_steps[0] + 1
 
     gt_time = ground_truth.time
-    #index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
-    #gt_time = gt_time[index:]
+    # index = ground_truth.find_index_closest(ground_truth.time, 2*ground_truth.datasetSettings.gt_time_offset)
+    # gt_time = gt_time[index:]
     gt_time -= gt_time[0]
     gtx, estx, time = interpolate_1D_arrays(ground_truth.gt_transelation[0], position[:, 0], gt_time, time_steps)
     gty, esty, time = interpolate_1D_arrays(ground_truth.gt_transelation[1], position[:, 1], gt_time, time_steps)
