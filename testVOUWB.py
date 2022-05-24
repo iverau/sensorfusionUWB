@@ -258,7 +258,8 @@ class GtSAMTest:
         self.visual_odometry.update_scale(0.25)
         print("Scaling", scale)
         imu_measurements = []
-
+        camera_iteration = 0
+        skip = 20
         for measurement in self.dataset.generate_measurements():
 
             # TODO lage nye states ved hver camera måling
@@ -269,14 +270,16 @@ class GtSAMTest:
                 self.add_UWB_to_graph(measurement)
 
             if measurement.measurement_type.value == "Camera":
-                if self.prev_image_state is None:
-                    self.visual_odometry.track(measurement.image)
-                    self.prev_image_state = self.pose_variables[-1]
-                else:
-                    rotation, trans = self.visual_odometry.track(measurement.image)
-                    self.add_vo_to_graph(rotation, trans)
-                    self.time_stamps.append(measurement.time.to_time())
-                    self.prev_image_state = self.pose_variables[-1]
+                if camera_iteration % skip == 0:
+                    if self.prev_image_state is None:
+                        self.visual_odometry.track(measurement.image)
+                        self.prev_image_state = self.pose_variables[-1]
+                    else:
+                        rotation, trans = self.visual_odometry.track(measurement.image)
+                        self.add_vo_to_graph(rotation, trans)
+                        self.time_stamps.append(measurement.time.to_time())
+                        self.prev_image_state = self.pose_variables[-1]
+                camera_iteration += 1
             iteration_number += 1
             print("Iteration", iteration_number, len(self.pose_variables), len(self.time_stamps))
 

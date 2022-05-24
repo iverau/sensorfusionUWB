@@ -39,3 +39,11 @@ UWB-measures:
 - 10 sec: 0.47
 - 20 sec: 1.75
 - 30 sec: 17.2 
+
+
+VO-dropout:
+- 0 frames: 0.62
+- 2 frames: 0.55
+- 5 frames: 0.77
+- 10 frames: 1.13
+- 20 frames: 2.4

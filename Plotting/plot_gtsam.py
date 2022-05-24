@@ -20,7 +20,7 @@ def absoluteError(ground_truth, estimate):
 
 
 def get_common_time_frame(time_gt, time_orb, resolution):
-    return np.linspace(max(time_gt[0], time_orb[0] + 10), min(time_orb[-1] - 6, time_gt[-1]), resolution)
+    return np.linspace(max(time_gt[0], time_orb[0] + 10), min(time_orb[-1], time_gt[-1]), resolution)
 
 
 def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=1000):
@@ -266,7 +266,7 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     #print("Error Yaw:", absoluteError(gt, est))
     est = abs(est - gt)
 
-    with open("gnss_dropout_0.pickle", "wb") as f:
+    with open("vo_loss_20.pickle", "wb") as f:
         pick.dump([residual_traj, est, time], f)
 
     plt.subplot(313)
