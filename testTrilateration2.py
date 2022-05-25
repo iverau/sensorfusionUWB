@@ -292,7 +292,7 @@ class GtSAMTest:
                     self.imu_bias_variables[-1])
                 self.navstate = gtsam.NavState(self.current_pose.rotation(), self.current_pose.translation(
                 ), self.current_pose.rotation().matrix().T @ self.current_velocity)
-                if len(self.pose_variables) > 550:
+                if len(self.pose_variables) > 300:
                     break
 
         self.isam.update(self.factor_graph, self.graph_values)
