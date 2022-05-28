@@ -218,6 +218,9 @@ class GtSAMTest:
         # Dummy variable for storing imu measurements
         imu_measurements = []
         iteration_number = 0
+        real_time_pos = []
+        real_time_time = []
+        real_time_euler = []
         if GNSS_PREINIT_ENABLED:
             gnss_counter = 0
             # 10 secs of GNSS
@@ -308,6 +311,10 @@ class GtSAMTest:
                 # self.calculateDistancesFromUWBAncors()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
+                real_time_pos.append(result.atPose3(self.pose_variables[-1]).translation())
+                real_time_euler.append(R.from_matrix(result.atPose3(self.pose_variables[-1]).rotation().matrix()).as_euler("xyz"))
+                real_time_time.append(self.time_stamps[-1])
+
                 self.current_velocity = result.atVector(
                     self.velocity_variables[-1])
                 self.current_velocity[2] = 0
@@ -329,8 +336,8 @@ class GtSAMTest:
         # for index in range(len(positions[:length_of_preinitialization])):
         #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
 
-        for index in range(len(positions[length_of_preinitialization:])):
-            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
+        for index in range(len(real_time_pos)):
+            real_time_pos[index] -= (R.from_euler("xyz", real_time_euler[index]).as_matrix() @ uwb_offset).flatten()
 
         biases = gtsam_bias_from_results(result, self.imu_bias_variables)
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
@@ -349,12 +356,14 @@ class GtSAMTest:
         #plot_vel(gtsam_velocity_from_results(result, self.velocity_variables), self.time_stamps, self.ground_truth)
         # plt.figure(6)
         #plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
+        print(np.array(real_time_euler).shape)
+        print(real_time_euler[0])
         plt.figure(1)
-        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        plot_threedof2(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.figure(2)
-        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plot_threedof_error(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.figure(3)
-        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        new_xy_plot(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.show()
 
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))

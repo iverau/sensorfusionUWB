@@ -1,6 +1,7 @@
 import gtsam
 import numpy as np
 
+
 def gtsam_pose_from_result(gtsam_result):
     poses = gtsam.utilities.allPose3s(gtsam_result)
     keys = gtsam.KeyVector(poses.keys())
@@ -25,6 +26,7 @@ def gtsam_landmark_from_results(gtsam_result, landmark_keys):
             pose = gtsam_result.atVector(key)
             poses[key] = pose
     return poses
+
 
 def gtsam_pose_to_numpy(gtsam_pose):
     """Convert GTSAM pose to numpy arrays 
