@@ -12,7 +12,7 @@ from Sensors.GNSS import GNSS
 
 import matplotlib.pyplot as plt
 from Utils.gtsam_pose_utils import gtsam_pose_from_result, gtsam_landmark_from_results, gtsam_bias_from_results, gtsam_velocity_from_results
-from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot, ATE
+from Plotting.plot_gtsam import plot_horizontal_trajectory, plot_position, plot_angels, plot_bias, plot_vel, plot_threedof2, plot_threedof_error, new_xy_plot, ATE, plot_imu_values, plot_uwb_anchors_rate
 import seaborn as sns
 
 from uwbPreinitializationTuning import *
@@ -216,6 +216,8 @@ class GtSAMTest:
 
     def run(self):
         # Dummy variable for storing imu measurements
+        all_imu_values = []
+        raw_uwb_values = []
         imu_measurements = []
         iteration_number = 0
         if GNSS_PREINIT_ENABLED:
@@ -282,6 +284,7 @@ class GtSAMTest:
                     self.isam.update()
 
                 self.add_UWB_to_graph(measurement)
+                raw_uwb_values.append([measurement.id, measurement.time.to_time()])
 
                 # if not (700 < len(self.pose_variables) < 1100):
                 #    self.add_UWB_to_graph(measurement)
@@ -289,6 +292,7 @@ class GtSAMTest:
             elif measurement.measurement_type.value == "IMU":
                 # Store the IMU factors unntil a new UWB measurement is recieved
                 imu_measurements.append(measurement)
+                all_imu_values.append(measurement)
 
             iteration_number += 1
             print("Iteration", iteration_number, len(
@@ -350,11 +354,12 @@ class GtSAMTest:
         # plt.figure(6)
         #plot_position_uwb_compensated(positions, eulers, self.ground_truth, self.time_stamps, length_of_preinitialization)
         plt.figure(1)
-        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
-        plt.figure(2)
-        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
-        plt.figure(3)
-        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        #plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        # plt.figure(2)
+        #plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        # plt.figure(3)
+        #new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        plot_uwb_anchors_rate(raw_uwb_values)
         plt.show()
 
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))

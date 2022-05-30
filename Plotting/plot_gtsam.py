@@ -132,6 +132,44 @@ def convert_to_body(ground_truth):
     return np.array(body_pos)
 
 
+def plot_imu_values(all_imu_values):
+    x_values = [meas.linear_vel[0] for meas in all_imu_values]
+    y_values = [meas.linear_vel[1] for meas in all_imu_values]
+    yaw_values = [meas.angular_vel[0] for meas in all_imu_values]
+    time_frame = np.linspace(0, 100, len(all_imu_values))
+
+    plt.suptitle("IMU Measurements")
+    plt.subplot(311)
+    plt.plot(time_frame, x_values)
+    plt.ylabel("North Acceleration [m/s^2]")
+    plt.legend(["Odometry in North"])
+
+    plt.subplot(312)
+    plt.plot(time_frame, y_values)
+    plt.ylabel("East Acceleration [m/s^2]")
+    plt.legend(["Odometry in East"])
+
+    plt.subplot(313)
+    plt.plot(time_frame, yaw_values)
+    plt.ylabel("Yaw Rate [rad/s]")
+    plt.legend(["Odometry in Yaw"])
+    plt.xlabel("Time [s]")
+
+
+def plot_uwb_anchors_rate(raw_uwb_list):
+    uwb_beacons = {1827: [-0.545153, -0.04282936,  1.49997155], 840: [-92.77930304,  -6.67807677,   0.91031529], 1089: [
+        -22.33896783, -22.76350421,   1.49969375], 1252: [-55.43239422,  35.36695921,  -1.19977753], 1625: [-82.20259541,   8.18208795,   0.91097657]}
+
+    mappingUwb = {1827: 1, 840: 2, 1089: 3, 1252: 4, 1625: 5}
+
+    uwb_measurements = np.array([[t[1], mappingUwb[t[0]]] for t in raw_uwb_list])
+
+    plt.scatter(uwb_measurements.T[0] - raw_uwb_list[0][1], uwb_measurements.T[1], linewidths=0.5)
+    plt.xlabel("Time [s]")
+    plt.ylabel("Anchor id")
+    plt.suptitle("Achor measurements rate")
+
+
 def plot_threedof2(position, euler_angels, ground_truth, time_steps):
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]
