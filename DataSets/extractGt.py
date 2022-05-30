@@ -32,7 +32,6 @@ class GroundTruthEstimates:
         index = 0
         if voBruteForce:
             index = self.find_index_closest(self.time, 2*self.datasetSettings.gt_time_offset)
-        #print("Initial pose:", self.north[index], self.east[index], self.down[index])
         return np.array([self.roll[index], self.pitch[index], self.yaw[index], self.north[index], self.east[index], self.down[index]])
 
     def initial_velocity(self):
@@ -45,7 +44,7 @@ class GroundTruthEstimates:
 
         # Compensate for time offset
         if pre_initialization:
-            self.time_offset = self.datasetSettings.gt_time_offset - 10
+            self.time_offset = self.datasetSettings.gt_time_offset + 30
         else:
             self.time_offset = self.datasetSettings.gt_time_offset
 
@@ -53,25 +52,18 @@ class GroundTruthEstimates:
         self.time = self.time[self.start_index:] - self.datasetSettings.gt_time_offset
         print("Start time of ground truth:", self.time[0])
 
-        self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[
-            self.start_index:]
-        self.east = np.array(self.data_dictionary["p_lb_L_hat"][1])[
-            self.start_index:]
-        self.down = np.array(self.data_dictionary["p_lb_L_hat"][2])[
-            self.start_index:]
-        self.roll = np.array(self.data_dictionary["roll_hat"][0])[
-            self.start_index:]
-        self.pitch = np.array(self.data_dictionary["pitch_hat"][0])[
-            self.start_index:]
-        self.yaw = np.array(self.data_dictionary["yaw_hat"][0])[
-            self.start_index:]
+        self.north = np.array(self.data_dictionary["p_lb_L_hat"][0])[self.start_index:]
+        self.east = np.array(self.data_dictionary["p_lb_L_hat"][1])[self.start_index:]
+        self.down = np.array(self.data_dictionary["p_lb_L_hat"][2])[self.start_index:]
+        self.roll = np.array(self.data_dictionary["roll_hat"][0])[self.start_index:]
+        self.pitch = np.array(self.data_dictionary["pitch_hat"][0])[self.start_index:]
+        self.yaw = np.array(self.data_dictionary["yaw_hat"][0])[self.start_index:]
 
         self.v_north = self.data_dictionary["v_eb_n_hat"][0][self.start_index:]
         self.v_east = self.data_dictionary["v_eb_n_hat"][1][self.start_index:]
         self.v_down = self.data_dictionary["v_eb_n_hat"][2][self.start_index:]
 
-        self.gt_transelation = np.array(self.data_dictionary["p_lb_L_hat"]).astype(
-            "float")[:, self.start_index:]
+        self.gt_transelation = np.array(self.data_dictionary["p_lb_L_hat"]).astype("float")[:, self.start_index:]
         self.gt_angels = np.zeros((len(self.time), 3)).astype("float")
         self.gt_angels[:, 0] = self.roll.copy()
         self.gt_angels[:, 1] = self.pitch.copy()

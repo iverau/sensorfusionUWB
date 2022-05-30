@@ -265,13 +265,17 @@ class GtSAMTest:
                         self.imu_bias_variables[-1])
                     gnss_counter = 0
 
+        print("Time 0", self.time_stamps[0])
+        print("Time 1:", self.time_stamps[1])
         imu_measurements = []
         length_of_preinitialization = len(self.pose_variables)
+        timing = self.time_stamps[-1]
         for measurement in self.dataset.generate_measurements():
 
             if measurement.measurement_type.value == "UWB":
                 if imu_measurements:
                     self.time_stamps.append(measurement.time.to_time())
+                    #print("Time:", timing, self.time_stamps[-1])
                     integrated_measurement = self.pre_integrate_imu_measurement(
                         imu_measurements)
                     self.add_imu_factor(
@@ -325,7 +329,7 @@ class GtSAMTest:
         # Compensate for UWB arm
         uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
         gnss_offset = np.array([3.015, 0, -1.36])
-
+        #print("Time 3", self.time_stamps[length_of_preinitialization])
         # for index in range(len(positions[:length_of_preinitialization])):
         #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
 

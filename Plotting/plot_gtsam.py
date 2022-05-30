@@ -19,7 +19,7 @@ def absoluteError(ground_truth, estimate):
 
 
 def get_common_time_frame(time_gt, time_orb, resolution):
-    return np.linspace(max(time_gt[0], time_orb[0] + 10), min(time_orb[-1] - 6, time_gt[-1]), resolution)
+    return np.linspace(max(time_gt[0], time_orb[0] + 50), min(time_orb[-1] - 16, time_gt[-1]), resolution)
 
 
 def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=1000):
@@ -133,6 +133,11 @@ def convert_to_body(ground_truth):
 
 
 def plot_threedof2(position, euler_angels, ground_truth, time_steps):
+
+    print("Timings:")
+    print("Estimate:", time_steps[0])
+    print("GT:",  ground_truth.time[0])
+
     time_steps = np.array(time_steps)
     time_steps[1:] -= time_steps[1] - time_steps[0]
     time_steps -= time_steps[0] + 1

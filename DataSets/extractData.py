@@ -15,11 +15,9 @@ class ROSData:
         # Initializes the dataset settings
         self.dataset_settings = ROSData.select_dataset(dataset_number)
 
-        self.initialization_step_time = 0
-
         # Initializes the rosbag
         self.bag = rosbag.Bag(self.dataset_settings.filepath)
-        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+        self.bag_start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset)
         self.bag_end_time = self.get_bag_end_time()
         self.extract_initial_pose()
 
@@ -28,7 +26,6 @@ class ROSData:
             data = msg
             time = t
             break
-        self.bag_start_time = time
         return self.convert_GNSS_to_NED(data)
 
     def extract_ned_origin(self):
@@ -55,10 +52,10 @@ class ROSData:
 
     def generate_initialization_gnss_imu(self, actual_value=False):
         if not actual_value:
-            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
-            end_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset + self.initialization_step_time)
+            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 50)
+            end_time = self.bag_start_time
         else:
-            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 10)
+            start_time = rospy.Time(self.bag.get_start_time() + self.dataset_settings.bag_start_time_offset - 50)
             end_time = self.bag_end_time
         topics = ["/sentiboard/adis", "/ublox2/fix", "/camera/image_raw/compressed"]
         for topic, msg, t in self.bag.read_messages(topics=topics, start_time=start_time, end_time=end_time):
