@@ -309,6 +309,8 @@ def new_xy_plot(position, euler_angels, ground_truth, time_steps):
     plt.suptitle("Horizontal Trajectory")
     plt.plot(estx, esty)
     plt.plot(gtx, gty)
+    plt.xlabel("East [m]")
+    plt.ylabel("North [m]")
     plt.legend(["Estimate", "Ground truth"])
 
 
