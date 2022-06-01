@@ -284,7 +284,7 @@ class GtSAMTest:
 
                 # self.add_UWB_to_graph(measurement)
 
-                if not (700 < len(self.pose_variables) < 1600):
+                if not (700 < len(self.pose_variables) < 1300):
                     self.add_UWB_to_graph(measurement)
                 else:
                     if first is None:

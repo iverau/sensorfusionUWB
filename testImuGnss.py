@@ -245,7 +245,7 @@ class GtSAMTest:
                         self.factor_graph.add(gtsam.PriorFactorVector(self.velocity_variables[-1], self.current_pose.rotation().matrix()
                                               @ self.navstate.velocity(), gtsam.noiseModel.Diagonal.Sigmas(GNSS_VELOCITY_SIGMAS)))
                         self.factor_graph.add(gtsam.PriorFactorConstantBias(self.imu_bias_variables[-1], self.current_bias, self.prior_noise_b))
-                    if not (20 < len(self.pose_variables) < 20):
+                    if not (30 < len(self.pose_variables) < 51):
                         gnss_pose = self.add_GNSS_to_graph(self.factor_graph, measurement)
                         gnss_counter += 1
                         self.graph_values.insert(self.pose_variables[-1], gnss_pose)
