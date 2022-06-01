@@ -47,7 +47,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        sns.set()
+        # sns.set()
 
     def initialize_graph(self):
 

@@ -32,7 +32,7 @@ def interpolate_1D_arrays(value_gt, value_orb, time_gt, time_orb, resolution=100
 
 
 def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, ground_truth):
-    plt.suptitle("Horizontal trajectory")
+    plt.suptitle("Anchor IDs")
     uwb_beacons = {1827: [-0.545153, -0.04282936,  1.49997155], 840: [-92.77930304,  -6.67807677,   0.91031529], 1089: [
         -22.33896783, -22.76350421,   1.49969375], 1252: [-55.43239422,  35.36695921,  -1.19977753], 1625: [-82.20259541,   8.18208795,   0.91097657]}
     ATE = [0.47, 0.36, 0.46, 0.82, 0.41]
@@ -42,7 +42,7 @@ def plot_horizontal_trajectory(position_estimates, x_lim, y_lim, uwb_beacons, gr
     for index, data in enumerate(zip(ATE, uwb_beacons.values())):
         a, p = data
         plt.scatter(p[1], p[0], color="red")
-        plt.text(p[1] + 0.5, p[0] + 0.5, f"{index + 1}: {a}", fontsize=15)
+        plt.text(p[1] + 0.5, p[0] + 0.5, f"{index + 1}", fontsize=15)
         x_list.append(p[1])
         y_list.append(p[0])
 

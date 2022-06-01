@@ -250,7 +250,7 @@ class VisualOdometry:
         self.noise_values_init = noise_values
         self.noise_values = noise_values
         self.camera = PinholeCamera()
-        self.detector = cv2.ORB_create(nfeatures=250)
+        self.detector = cv2.ORB_create(nfeatures=1000)
         self.old_image = None
         self.scale = 1.0
         self.matcher = cv2.BFMatcher(cv2.NORM_HAMMING2, crossCheck=False)
@@ -318,9 +318,11 @@ class VisualOdometry:
                     imageIndexes.append([m.queryIdx, m.trainIdx])
                     good.append([m])
 
-            #img3 = cv2.drawMatchesKnn(self.old_image, self.kp1, image, self.kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
-            # plt.imshow(img3)
-            # plt.show()
+            img3 = cv2.drawMatchesKnn(cv2.cvtColor(self.old_image, cv2.COLOR_BGR2RGB), self.kp1, cv2.cvtColor(
+                image, cv2.COLOR_BGR2RGB), self.kp2, good, None, flags=cv2.DrawMatchesFlags_NOT_DRAW_SINGLE_POINTS)
+            plt.imshow(img3)
+            plt.show()
+            exit()
             self.remove_outliers_with_ransac(imageIndexes)
             self.E = estimate_E(self.xy1, self.xy2)
             # Start extrating T
