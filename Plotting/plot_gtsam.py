@@ -173,6 +173,7 @@ def plot_threedof2(position, euler_angels, ground_truth, time_steps):
     plt.legend(["Estimate", "Ground truth"])
     plt.grid()
     plt.ylabel("Yaw [deg]")
+    plt.xlabel("Time [s]")
 
 
 def plot_threedof(position, euler_angels, ground_truth, time_steps):
@@ -270,6 +271,7 @@ def plot_threedof_error(position, euler_angels, ground_truth, time_steps):
     plt.legend(["Error in Yaw"])
     plt.grid()
     plt.ylabel("Error [deg]")
+    plt.xlabel("Time [s]")
 
 
 def ATE(position, ground_truth, time_steps):
