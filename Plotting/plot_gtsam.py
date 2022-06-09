@@ -138,21 +138,21 @@ def plot_imu_values(all_imu_values):
     yaw_values = [meas.angular_vel[0] for meas in all_imu_values]
     time_frame = np.linspace(0, 100, len(all_imu_values))
 
-    plt.suptitle("IMU Measurements")
+    plt.suptitle("Raw IMU Measurements")
     plt.subplot(311)
     plt.plot(time_frame, x_values)
-    plt.ylabel("North Acceleration [m/s^2]")
-    plt.legend(["Odometry in North"])
+    plt.ylabel("X Acceleration [m/s^2]")
+    plt.legend(["Acceleration"])
 
     plt.subplot(312)
     plt.plot(time_frame, y_values)
-    plt.ylabel("East Acceleration [m/s^2]")
-    plt.legend(["Odometry in East"])
+    plt.ylabel("Y Acceleration [m/s^2]")
+    plt.legend(["Acceleration"])
 
     plt.subplot(313)
     plt.plot(time_frame, yaw_values)
     plt.ylabel("Yaw Rate [rad/s]")
-    plt.legend(["Odometry in Yaw"])
+    plt.legend(["Angular Rate"])
     plt.xlabel("Time [s]")
 
 

@@ -359,7 +359,8 @@ class GtSAMTest:
         #plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
         # plt.figure(3)
         #new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
-        plot_uwb_anchors_rate(raw_uwb_values)
+        # plot_uwb_anchors_rate(raw_uwb_values)
+        plot_imu_values(all_imu_values)
         plt.show()
 
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
