@@ -47,7 +47,7 @@ class GtSAMTest:
         self.graph_values: gtsam.Values = gtsam.Values()
         self.factor_graph: gtsam.NonlinearFactorGraph = gtsam.NonlinearFactorGraph()
         self.initialize_graph()
-        sns.set()
+        # sns.set()
 
     def initialize_graph(self):
 
@@ -258,6 +258,9 @@ class GtSAMTest:
         self.visual_odometry.update_scale(0.25)
         print("Scaling", scale)
         imu_measurements = []
+        real_time_pos = []
+        real_time_time = []
+        real_time_euler = []
 
         for measurement in self.dataset.generate_measurements():
 
@@ -291,6 +294,10 @@ class GtSAMTest:
                 self.reset_pose_graph_variables()
 
                 self.current_pose = result.atPose3(self.pose_variables[-1])
+                real_time_pos.append(result.atPose3(self.pose_variables[-1]).translation())
+                real_time_euler.append(R.from_matrix(result.atPose3(self.pose_variables[-1]).rotation().matrix()).as_euler("xyz"))
+                real_time_time.append(self.time_stamps[-1])
+
                 self.integrating_state = result.atPose3(self.pose_variables[-1])
                 self.visual_odometry.reset_initial_conditions()
                 if len(self.pose_variables) > NUMBER_OF_RUNNING_ITERATIONS:
@@ -301,14 +308,14 @@ class GtSAMTest:
         positions, eulers = gtsam_pose_from_result(result)
 
         uwb_offset = np.array([3.285, -2.10, -1.35]).reshape((3, 1))
-        uwb_offset = np.array([3.87, -1.84, -1.11]).reshape((3, 1))
+        #uwb_offset = np.array([3.87, -1.84, -1.11]).reshape((3, 1))
         gnss_offset = np.array([3.015, 0, -1.36])
 
         # for index in range(len(positions[:length_of_preinitialization])):
         #    positions[index] -= (R.from_euler("xyz", eulers[index]).as_matrix() @ gnss_offset).flatten()
 
-        for index in range(len(positions[length_of_preinitialization:])):
-            positions[length_of_preinitialization + index] -= (R.from_euler("xyz", eulers[length_of_preinitialization + index]).as_matrix() @ uwb_offset).flatten()
+        for index in range(len(real_time_pos)):
+            real_time_pos[index] -= (R.from_euler("xyz", real_time_euler[index]).as_matrix() @ uwb_offset).flatten()
 
         print("ATE: ", ATE(positions, self.ground_truth, self.time_stamps))
 
@@ -321,11 +328,11 @@ class GtSAMTest:
         # plt.figure(3)
         #plot_angels(eulers, self.ground_truth, self.time_stamps)
         plt.figure(1)
-        plot_threedof2(positions, eulers, self.ground_truth, self.time_stamps)
+        plot_threedof2(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.figure(2)
-        plot_threedof_error(positions, eulers, self.ground_truth, self.time_stamps)
+        plot_threedof_error(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.figure(3)
-        new_xy_plot(positions, eulers, self.ground_truth, self.time_stamps)
+        new_xy_plot(np.array(real_time_pos), np.array(real_time_euler), self.ground_truth, real_time_time)
         plt.show()
 
 
